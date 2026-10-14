@@ -1,0 +1,436 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   TIMELESS KNOT — DESIGN TOKENS
+   Provisional premium interpretation of the brand references. Every colour,
+   font, easing and spacing value is defined here and nowhere else.
+   ========================================================================== */
+
+@theme {
+  /* Palette */
+  --color-sage: #98ad9b;        /* Signature brand */
+  --color-porcelain: #f8f6f1;   /* Main background */
+  --color-forest: #263a31;      /* Deep background */
+  --color-pale-sage: #e5ebe3;   /* Secondary background */
+  --color-charcoal: #292d29;    /* Primary typography */
+  --color-olive: #747d72;       /* Supporting typography — large sizes only (3.95:1 on porcelain) */
+  --color-ivory: #faf9f6;       /* Light typography */
+  --color-error: #8a3b2f;       /* Form errors only — 7.3:1 on porcelain */
+
+  /* Typography */
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-manrope), "Manrope", ui-sans-serif, system-ui, sans-serif;
+
+  /* Motion */
+  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-cinema: cubic-bezier(0.65, 0.05, 0.25, 1);
+  --ease-soft: cubic-bezier(0.33, 0, 0.2, 1);
+
+  /* Breakpoints (Tailwind defaults kept, with one wide editorial step) */
+  --breakpoint-3xl: 112rem;
+}
+
+:root {
+  /* Layout rhythm */
+  --gutter: clamp(1.25rem, 4.2vw, 4.5rem);
+  --section: clamp(6rem, 13vw, 12.5rem);
+  --section-tight: clamp(4.5rem, 9vw, 8rem);
+  --max: 100rem;
+  --header-h: 5.25rem;
+
+  /* Durations */
+  --dur-reveal: 1s;
+  --dur-hover: 0.7s;
+
+  color-scheme: light;
+}
+
+/* ==========================================================================
+   BASE
+   ========================================================================== */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-padding-top: var(--header-h);
+  }
+
+  body {
+    background: var(--color-porcelain);
+    color: var(--color-charcoal);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.7;
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background: var(--color-sage);
+    color: var(--color-charcoal);
+  }
+
+  :focus-visible {
+    outline: 1px solid currentColor;
+    outline-offset: 4px;
+  }
+
+  img,
+  video {
+    max-width: 100%;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+/* Lenis — native-feeling smooth scroll on desktop only */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+/* ==========================================================================
+   TYPOGRAPHY SCALE — fluid, individually tuned for mobile
+   ========================================================================== */
+
+@utility display-hero {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(2.45rem, 1.1rem + 5.2vw, 4.5rem);
+  line-height: 0.96;
+  letter-spacing: -0.022em;
+
+  @media (min-width: 64rem) {
+    font-size: clamp(4.5rem, 1.6rem + 6.4vw, 9.25rem);
+    line-height: 0.94;
+  }
+}
+
+@utility display-xl {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(2.6rem, 1.5rem + 5vw, 7.25rem);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+
+@utility display-lg {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: clamp(2.3rem, 1.4rem + 3.6vw, 5.25rem);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+}
+
+@utility display-md {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(1.85rem, 1.3rem + 2vw, 3.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+}
+
+@utility display-sm {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(1.45rem, 1.2rem + 0.9vw, 2.05rem);
+  line-height: 1.2;
+}
+
+@utility lede {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(1.3rem, 1.1rem + 0.8vw, 1.85rem);
+  line-height: 1.42;
+}
+
+@utility body-lg {
+  font-size: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+  line-height: 1.8;
+}
+
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  line-height: 1.6;
+}
+
+@utility meta {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* Muted supporting copy — AA compliant on porcelain, pale sage and sage */
+@utility text-muted {
+  color: color-mix(in oklab, var(--color-charcoal) 74%, transparent);
+}
+
+/* ==========================================================================
+   LAYOUT
+   ========================================================================== */
+
+@utility frame {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+@utility editorial-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: clamp(1rem, 2.2vw, 2.25rem);
+}
+
+@utility section-y {
+  padding-block: var(--section);
+}
+
+@utility hairline {
+  height: 1px;
+  background: currentColor;
+  opacity: 0.18;
+}
+
+/* ==========================================================================
+   INTERACTION
+   ========================================================================== */
+
+/* Underline that draws in from the left */
+@utility link-draw {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size var(--dur-hover) var(--ease-editorial);
+  padding-bottom: 0.2em;
+
+  &:hover,
+  &:focus-visible {
+    background-size: 100% 1px;
+  }
+}
+
+/* Gentle image scale on hover of a parent `.group` */
+@utility zoom-media {
+  transition: transform 1.4s var(--ease-editorial);
+  will-change: transform;
+
+  :where(.group):hover &,
+  :where(.group):focus-visible & {
+    transform: scale(1.035);
+  }
+}
+
+/* ==========================================================================
+   SCROLL REVEALS
+   Hidden states apply only when JS is running (html.js) and motion is allowed.
+   Elements are revealed by a single shared IntersectionObserver.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal] {
+    transition-property: opacity, transform;
+    transition-duration: 0.95s, 1.1s;
+    transition-timing-function: var(--ease-editorial), var(--ease-editorial);
+    transition-delay: var(--reveal-delay, 0s);
+  }
+
+  .js [data-reveal="up"]:not([data-inview]) {
+    opacity: 0;
+    transform: translate3d(0, 32px, 0);
+  }
+
+  .js [data-reveal="fade"]:not([data-inview]) {
+    opacity: 0;
+  }
+
+  /* Soft cinematic mask: image wipes upward without distorting its ratio.
+     The clip sits on the child — IntersectionObserver ignores fully clipped targets. */
+  .js [data-reveal="mask"] > * {
+    clip-path: inset(0 0 0 0);
+    transition: clip-path 1.3s var(--ease-cinema) var(--reveal-delay, 0s);
+  }
+  .js [data-reveal="mask"]:not([data-inview]) > * {
+    clip-path: inset(100% 0 0 0);
+  }
+  .js [data-reveal="mask"] > * > * {
+    transition: transform 1.7s var(--ease-cinema) var(--reveal-delay, 0s);
+  }
+  .js [data-reveal="mask"]:not([data-inview]) > * > * {
+    transform: scale(1.08);
+  }
+
+  /* Line-by-line headline reveal. Each .line clips its inner span. */
+  .js [data-reveal="lines"] .line > span {
+    display: inline-block;
+    transition: transform 1.15s var(--ease-editorial), opacity 0.9s var(--ease-soft);
+    transition-delay: calc(var(--reveal-delay, 0s) + var(--i, 0) * 0.11s);
+  }
+  .js [data-reveal="lines"]:not([data-inview]) .line > span {
+    transform: translate3d(0, 108%, 0);
+    opacity: 0;
+  }
+}
+
+.line {
+  display: block;
+  overflow: hidden;
+  /* breathing room so descenders and italics are not clipped */
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+/* ==========================================================================
+   HERO INTRO — CSS only, so content is meaningful at first paint
+   ========================================================================== */
+
+@keyframes hero-media {
+  from { transform: scale(1.07); }
+  to { transform: scale(1); }
+}
+@keyframes rise {
+  from { transform: translate3d(0, 108%, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translate3d(0, 18px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes scroll-cue {
+  0% { transform: scaleY(0); transform-origin: top; }
+  45% { transform: scaleY(1); transform-origin: top; }
+  55% { transform: scaleY(1); transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .intro-media {
+    animation: hero-media 2.6s var(--ease-editorial) both;
+  }
+  .intro-lines .line > span {
+    display: inline-block;
+    animation: rise 1.35s var(--ease-editorial) both;
+    animation-delay: calc(0.35s + var(--i, 0) * 0.12s);
+  }
+  .intro-fade {
+    animation: fade-up 1.1s var(--ease-editorial) both;
+    animation-delay: var(--delay, 0.9s);
+  }
+  .scroll-cue {
+    animation: scroll-cue 2.4s var(--ease-cinema) 2.2s infinite both;
+  }
+}
+
+/* ==========================================================================
+   PAGE TRANSITIONS — React <ViewTransition>
+   ========================================================================== */
+
+@keyframes vt-fade-out {
+  to { opacity: 0; }
+}
+@keyframes vt-rise-in {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+}
+
+::view-transition-old(.page) {
+  animation: vt-fade-out 0.28s var(--ease-soft) both;
+}
+::view-transition-new(.page) {
+  animation: vt-rise-in 0.6s var(--ease-editorial) 0.12s both;
+}
+::view-transition-group(.morph) {
+  animation-duration: 0.75s;
+  animation-timing-function: var(--ease-cinema);
+}
+::view-transition-group(site-header) {
+  animation: none;
+}
+::view-transition-old(site-header),
+::view-transition-new(site-header) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* ==========================================================================
+   FORMS
+   ========================================================================== */
+
+@utility field {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid color-mix(in oklab, var(--color-charcoal) 30%, transparent);
+  border-radius: 0;
+  padding: 0.85rem 0 0.8rem;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  color: var(--color-charcoal);
+  transition: border-color 0.4s var(--ease-soft);
+  appearance: none;
+
+  &::placeholder {
+    color: color-mix(in oklab, var(--color-charcoal) 45%, transparent);
+  }
+  &:hover {
+    border-bottom-color: color-mix(in oklab, var(--color-charcoal) 55%, transparent);
+  }
+  &:focus {
+    outline: none;
+    border-bottom-color: var(--color-forest);
+    box-shadow: 0 1px 0 0 var(--color-forest);
+  }
+  &[aria-invalid="true"] {
+    border-bottom-color: var(--color-error);
+  }
+}
+
+/* ==========================================================================
+   BOTANICAL LINE DRAWING
+   ========================================================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal] .botanical-stem,
+  .js [data-reveal] .botanical-leaf {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset 2.6s var(--ease-soft);
+  }
+  .js [data-reveal] .botanical-leaf {
+    transition-duration: 1.6s;
+    transition-delay: calc(0.5s + var(--leaf, 0) * 0.14s);
+  }
+  .js [data-reveal][data-inview] .botanical-stem,
+  .js [data-reveal][data-inview] .botanical-leaf {
+    stroke-dashoffset: 0;
+  }
+}
