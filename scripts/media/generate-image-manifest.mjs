@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 /**
- * Timeless Knot — build-time image discovery.
+ * Timeless Knot — build-time image and video discovery.
  *
  * Scans the approved folders inside `public/media/`, reads every supported
- * image's real dimensions, validates story metadata, and writes:
+ * image's real dimensions, validates story metadata, selects the homepage
+ * film from `home/video/` (see selectHomeVideo), and writes:
  *
  *   1. src/content/generated/media-manifest.json — typed data bundled into the
  *      site at build time (the Cloudflare Worker never touches the filesystem).
  *   2. public/.assetsignore — keeps everything that is NOT a published,
- *      referenced image (drafts, unsupported files, notes, unapproved folders)
- *      out of the Cloudflare static-asset upload.
+ *      referenced image or video (drafts, unsupported files, notes, unapproved
+ *      folders, oversized files) out of the Cloudflare static-asset upload.
  *
  * Content problems never break the build: the affected image or story is
  * skipped and reported. Run with --strict to exit non-zero on any warning
@@ -21,6 +22,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { imageSize } from "image-size";
+import { readMp4 } from "./read-mp4.mjs";
 
 export const SUPPORTED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
 /** Cloudflare Workers static assets reject files larger than 25 MiB. */
@@ -30,6 +32,14 @@ export const LARGE_FILE_BYTES = 8 * 1024 * 1024;
 
 /** Single-collection folders, mapped to the page sections that use them. */
 export const SITE_COLLECTIONS = ["home/hero", "home/featured", "about", "experience", "contact"];
+
+/** Homepage film folder: one MP4 (H.264) plus an optional poster image. */
+export const VIDEO_DIR = "home/video";
+export const VIDEO_EXTENSIONS = new Set([".mp4"]);
+/** Above this a video still publishes, with a warning to compress it. */
+export const LARGE_VIDEO_BYTES = 15 * 1024 * 1024;
+/** H.264 sample entries: the codec every browser can play from an MP4. */
+const PLAYABLE_CODECS = new Set(["avc1", "avc3"]);
 
 /** Story roots: each subfolder is one story (slug = folder name). */
 export const STORY_ROOTS = {
@@ -380,11 +390,97 @@ async function readStory(root, slug, absDir, publicDir, report, seen) {
   };
 }
 
+/* ------------------------------------------------------------------------ */
+/* Homepage film                                                             */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * Picks the homepage film from public/media/home/video/.
+ *
+ * Deterministic: the first valid .mp4 in natural filename order is used
+ * (`01-…` before `02-…`); any others are withheld. A poster is optional — an
+ * image with the same name as the video (`film.mp4` + `film.jpg`), otherwise
+ * one named `poster.*`. With no valid video the result is null and the
+ * homepage film section is not rendered at all.
+ */
+export async function selectHomeVideo(publicDir, report) {
+  const absDir = path.join(publicDir, "media", ...VIDEO_DIR.split("/"));
+  const where = `media/${VIDEO_DIR}`;
+  const files = (await listDir(absDir)).filter((e) => e.isFile() && !isHidden(e.name)).map((e) => e.name).sort(byName);
+  const videos = files.filter((name) => VIDEO_EXTENSIONS.has(path.extname(name).toLowerCase()));
+  for (const name of files) {
+    const ext = path.extname(name).toLowerCase();
+    if (!VIDEO_EXTENSIONS.has(ext) && !SUPPORTED_EXTENSIONS.has(ext)) {
+      report.warn(`${where}/${name}: unsupported file type "${ext || "none"}" — not published (videos must be .mp4)`);
+    }
+  }
+
+  let chosen = null;
+  for (const name of videos) {
+    const abs = path.join(absDir, name);
+    const rel = `${where}/${name}`;
+    if (chosen) {
+      report.warn(`${rel}: only one homepage video is shown — "${chosen.file}" is used (first by name); this file is not published`);
+      continue;
+    }
+    const { size } = await stat(abs);
+    if (size === 0) {
+      report.warn(`${rel}: empty file — skipped`);
+      continue;
+    }
+    if (size > MAX_FILE_BYTES) {
+      report.warn(`${rel}: ${(size / 1048576).toFixed(1)} MB exceeds Cloudflare's 25 MB asset limit — skipped (please compress; see docs/IMAGE-UPLOADS.md)`);
+      continue;
+    }
+    const info = readMp4(await readFile(abs));
+    if (!info) {
+      report.warn(`${rel}: not a readable MP4 video — skipped`);
+      continue;
+    }
+    if (!PLAYABLE_CODECS.has(info.codec)) {
+      report.warn(`${rel}: video codec "${info.codec}" does not play in every browser — skipped (export as H.264 MP4)`);
+      continue;
+    }
+    if (!info.fastStart) report.warn(`${rel}: not optimised for streaming — playback starts only after a large part downloads (export with "fast start" / "web optimised")`);
+    if (size > LARGE_VIDEO_BYTES) report.warn(`${rel}: ${(size / 1048576).toFixed(1)} MB — consider compressing to under 15 MB for faster loading`);
+    chosen = { file: name, src: publicUrl(path.relative(publicDir, abs)), type: "video/mp4", width: info.width, height: info.height, duration: info.duration, hasAudio: info.hasAudio, bytes: size };
+  }
+  if (!chosen) return null;
+
+  // Optional poster: same base name as the video, else poster.*
+  const base = path.parse(chosen.file).name.toLowerCase();
+  const images = files.filter((name) => SUPPORTED_EXTENSIONS.has(path.extname(name).toLowerCase()));
+  const posterName = images.find((n) => path.parse(n).name.toLowerCase() === base) ?? images.find((n) => path.parse(n).name.toLowerCase() === "poster");
+  let poster;
+  if (posterName) {
+    const abs = path.join(absDir, posterName);
+    let dims = null;
+    try {
+      if ((await stat(abs)).size <= MAX_FILE_BYTES) dims = imageSize(await readFile(abs));
+    } catch {
+      dims = null;
+    }
+    if (dims?.width && dims?.height) {
+      const rotated = dims.orientation && dims.orientation >= 5;
+      poster = { src: publicUrl(path.relative(publicDir, abs)), width: rotated ? dims.height : dims.width, height: rotated ? dims.width : dims.height, alt: "" };
+    } else {
+      report.warn(`${where}/${posterName}: unreadable or oversized poster image — the video is shown without it`);
+    }
+  }
+  for (const name of images) {
+    if (name !== posterName) report.warn(`${where}/${name}: not used — a poster must share the video's name ("${base}.jpg") or be named poster.jpg`);
+  }
+
+  const { file, ...video } = chosen;
+  void file;
+  return { ...video, ...(poster ? { poster } : {}) };
+}
+
 /** True when a file sits directly in a site collection or a story folder. */
 function isRecognisedLocation(relFromPublic) {
   const parts = relFromPublic.split("/").slice(1, -1); // drop "media" and the filename
   const dir = parts.join("/");
-  if (SITE_COLLECTIONS.includes(dir)) return true;
+  if (SITE_COLLECTIONS.includes(dir) || dir === VIDEO_DIR) return true;
   // weddings/<photo> is a category gallery; weddings/<story>/<photo> is a story.
   return (parts.length === 1 || parts.length === 2) && Object.hasOwn(STORY_ROOTS, parts[0]);
 }
@@ -463,11 +559,18 @@ export async function generateManifest({ publicDir, outFile, ignoreFile }) {
       byName(a.slug, b.slug),
   );
 
-  const manifest = { version: 1, collections, galleries, stories };
+  // Homepage film
+  const video = await selectHomeVideo(publicDir, report);
+  if (video) {
+    published.add(video.src);
+    if (video.poster) published.add(video.poster.src);
+  }
+
+  const manifest = { version: 1, collections, galleries, stories, video };
   await mkdir(path.dirname(outFile), { recursive: true });
   await writeFile(outFile, JSON.stringify(manifest, null, 2) + "\n");
 
-  // Everything under /media that is not a published image stays out of the upload.
+  // Everything under /media that is not a published image or video stays out of the upload.
   const unpublished = [];
   const walk = async (dir) => {
     for (const entry of await listDir(dir)) {
@@ -490,7 +593,7 @@ export async function generateManifest({ publicDir, outFile, ignoreFile }) {
       ignoreFile,
       [
         "# Generated by scripts/media/generate-image-manifest.mjs — do not edit.",
-        "# Files in public/media that are not published images are excluded from the Cloudflare upload.",
+        "# Files in public/media that are not published images or videos are excluded from the Cloudflare upload.",
         ...unpublished.map(escape),
         "",
       ].join("\n"),
@@ -517,7 +620,10 @@ if (isCli) {
   const counts = [...Object.entries(manifest.collections), ...Object.entries(manifest.galleries).map(([k, v]) => [`gallery/${k}`, v])]
     .map(([k, v]) => `${k}: ${v.length}`)
     .join(", ");
-  console.log(`[media] ${manifest.stories.length} published stor${manifest.stories.length === 1 ? "y" : "ies"}; ${counts}; ${unpublished.length} file(s) withheld from upload`);
+  const film = manifest.video
+    ? `home video: ${decodeURIComponent(manifest.video.src.split("/").pop())} (${manifest.video.width}×${manifest.video.height}, ${(manifest.video.bytes / 1048576).toFixed(1)} MB${manifest.video.poster ? ", poster" : ""})`
+    : "home video: none";
+  console.log(`[media] ${manifest.stories.length} published stor${manifest.stories.length === 1 ? "y" : "ies"}; ${counts}; ${film}; ${unpublished.length} file(s) withheld from upload`);
   if (!quiet) notes.forEach((m) => console.log(`[media] note: ${m}`));
   warnings.forEach((m) => console.warn(`[media] warning: ${m}`));
   if (strict && warnings.length) {

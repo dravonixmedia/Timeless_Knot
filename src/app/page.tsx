@@ -1,11 +1,12 @@
 import { imagery, showreel } from "@/content/imagery";
-import { getCategoryGalleries } from "@/content/media";
+import { getCategoryGalleries, getHomeVideo } from "@/content/media";
 import { getFeaturedStories, getShowcaseFilm } from "@/content/stories";
 import { Page } from "@/components/layout/Page";
 import { Picture } from "@/components/media/Picture";
 import { Parallax } from "@/components/motion/Parallax";
 import { EucalyptusSprig } from "@/components/brand/Botanical";
 import { FilmPlayer } from "@/components/film/FilmPlayer";
+import { HomeFilm } from "@/components/film/HomeFilm";
 import { StoryCard } from "@/components/stories/StoryCard";
 import { Invitation } from "@/components/sections/Invitation";
 import { ArrowLink, ButtonLink } from "@/components/ui/Links";
@@ -277,9 +278,12 @@ function Philosophy() {
 /* 05 — Cinematic films --------------------------------------------------- */
 
 function Films() {
-  // Only a real, playable film is shown; until one exists the section is left out.
-  const film = showreel ?? getShowcaseFilm();
-  if (!film) return null;
+  // The film uploaded to public/media/home/video/ comes first, then a configured
+  // showreel or a published story's film. With none, the section is left out
+  // entirely — no placeholder frame, no play button, no gap.
+  const video = getHomeVideo();
+  const film = video ? undefined : (showreel ?? getShowcaseFilm());
+  if (!video && !film) return null;
   return (
     <section aria-labelledby="films-title" className="bg-forest text-ivory section-y">
       <div className="frame">
@@ -296,7 +300,7 @@ function Films() {
         </div>
 
         <div className="mt-16 lg:mt-24" {...reveal("mask")}>
-          <FilmPlayer film={film} />
+          {video ? <HomeFilm video={video} /> : film && <FilmPlayer film={film} />}
         </div>
       </div>
     </section>
