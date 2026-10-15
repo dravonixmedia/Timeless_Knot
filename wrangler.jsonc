@@ -22,5 +22,15 @@
   },
   "observability": {
     "enabled": true
+  },
+  // Worker Previews (`wrangler preview`, used for non-production branches).
+  // Previews take their bindings only from this block; assets, `main` and
+  // compatibility settings are inherited from above. Service bindings are not
+  // supported in Previews, so WORKER_SELF_REFERENCE is intentionally absent —
+  // OpenNext only uses it for ISR revalidation, which this site does not use.
+  "previews": {
+    "images": {
+      "binding": "IMAGES"
+    }
   }
 }

@@ -67,6 +67,7 @@ Cloudflare dashboard → Workers & Pages → `timeless-knot` → Settings → Bu
 | Root directory | `/` |
 | Build command | `npx opennextjs-cloudflare build` |
 | Deploy command | `npx opennextjs-cloudflare deploy` |
+| Non-production branch deploy command | `npx opennextjs-cloudflare populateCache local && npx wrangler preview` (Worker Previews; bindings come from the `previews` block in `wrangler.jsonc`) |
 | Build variables | `NEXT_PUBLIC_SITE_URL`, `ENQUIRY_WEBHOOK_URL` (when available); `NEXT_PUBLIC_WHATSAPP_URL` only if not set in code |
 | Runtime variables / secrets | `ENQUIRY_WEBHOOK_URL` (when available) |
 
