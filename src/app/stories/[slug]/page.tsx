@@ -14,12 +14,8 @@ import { Arrow } from "@/components/ui/Links";
 import { Eyebrow, Lines, reveal } from "@/components/ui/Typography";
 import { breadcrumbSchema, JsonLd, pageMetadata, storySchema } from "@/lib/seo";
 
-/*
- * Every story is prerendered via generateStaticParams and story links prefetch
- * fully (prefetch={true}), so this segment may block on `params` without
- * slowing navigation — and the cover→hero morph renders in a single commit.
- */
-export const instant = false;
+// Only the stories in the dataset exist; any other slug is a 404.
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return getStories().map((story) => ({ slug: story.slug }));

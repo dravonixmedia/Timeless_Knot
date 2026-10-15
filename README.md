@@ -7,7 +7,7 @@ Built by [Dravonix Media](https://dravonixmedia.com/).
 
 ## Stack
 
-- Next.js 16 (App Router, Turbopack, Cache Components + Partial Prefetching)
+- Next.js 16.3 (App Router, Turbopack, static generation) — deployed to Cloudflare Workers via the OpenNext adapter
 - React 19.3 (`<ViewTransition>` for page transitions and story cover → hero morphs)
 - TypeScript, Tailwind CSS v4 (design tokens in `src/app/globals.css`)
 - GSAP ScrollTrigger (restrained scroll-linked parallax only)
@@ -29,6 +29,34 @@ Copy `.env.example` to `.env.local` and fill in:
 | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | Production origin. Drives canonical URLs, sitemap and Open Graph. **While unset, the site is marked `noindex` and robots.txt disallows crawling.** |
 | `ENQUIRY_WEBHOOK_URL` | Server-side endpoint that receives contact enquiries as JSON. **While unset, the contact form runs in clearly labelled demonstration mode and never reports a false success.** |
+
+## Deploying to Cloudflare Workers
+
+The site runs on Cloudflare Workers through [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare),
+which builds the Next.js app and wraps it in a Worker (`.open-next/worker.js`).
+
+```bash
+npm run preview    # OpenNext build + local Worker (workerd) at http://localhost:8787
+npm run deploy     # OpenNext build + populate cache + deploy (needs `wrangler login`)
+```
+
+Cloudflare dashboard → Workers & Pages → `timeless-knot` → Settings → Build:
+
+| Setting | Value |
+| --- | --- |
+| Root directory | `/` |
+| Build command | `npx opennextjs-cloudflare build` |
+| Deploy command | `npx opennextjs-cloudflare deploy` |
+| Build variables | `NEXT_PUBLIC_SITE_URL`, `ENQUIRY_WEBHOOK_URL` (when available) |
+| Runtime variables / secrets | `ENQUIRY_WEBHOOK_URL` (when available) |
+
+- Use `opennextjs-cloudflare deploy`, **not** a bare `wrangler deploy`: it first copies the prerendered
+  pages into the Worker's static assets (the read-only cache configured in `open-next.config.ts`).
+- Runtime settings (entry point, `nodejs_compat`, static assets, bindings) live in `wrangler.jsonc`.
+- Version constraints: Next.js is pinned to **16.3.8**. Next 16.4 emits a `preview-props.json`
+  manifest the adapter cannot inline yet (Worker error 1101), and Cache Components deadlock on
+  Workers with Next 16.3 — so `cacheComponents` stays off. Re-test with `npm run preview` before
+  upgrading either `next` or `@opennextjs/cloudflare`.
 
 ## Where things live
 
