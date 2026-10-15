@@ -19,7 +19,7 @@ export default function ContactPage() {
 
   return (
     <Page>
-      <section data-hide-floating-cta aria-labelledby="contact-title" className="bg-porcelain pb-[var(--section)] pt-[calc(var(--header-h)+clamp(3rem,9vw,8rem))]">
+      <section aria-labelledby="contact-title" className="bg-porcelain pb-[var(--section)] pt-[calc(var(--header-h)+clamp(3rem,9vw,8rem))]">
         <div className="frame editorial-grid gap-y-16">
           <div className="col-span-12 lg:col-span-5">
             <p className="eyebrow intro-fade mb-10 flex items-center gap-4 text-muted" style={{ ["--delay" as string]: "0.1s" }}>

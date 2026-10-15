@@ -476,8 +476,19 @@ html.lenis body {
   }
 }
 
-/* Pages with their own enquiry form (and WhatsApp link) opt out, so the
-   button never covers a form field. */
+/* Keyboard focus and in-page jumps stop clear of the floating button, so it
+   never sits on top of a focused form field or link. */
+html:has([data-floating-cta]) {
+  scroll-padding-bottom: 6.5rem;
+}
+
+/* While someone is typing in a form (e.g. the contact enquiry), the button
+   steps aside so it can never cover a field; it returns when focus leaves. */
+body:has(form:focus-within) .whatsapp-float {
+  visibility: hidden;
+}
+
+/* Optional opt-out for a page section that must never sit under the button. */
 body:has([data-hide-floating-cta]) .whatsapp-float {
   display: none;
 }
