@@ -7,7 +7,7 @@
     "build": "node scripts/media/generate-image-manifest.mjs && next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test \"scripts/media/*.test.mjs\"",
+    "test": "node --test \"scripts/media/*.test.mjs\" \"tests/*.test.mjs\"",
     "media": "node scripts/media/generate-image-manifest.mjs",
     "media:check": "node scripts/media/generate-image-manifest.mjs --strict",
     "postinstall": "node scripts/media/generate-image-manifest.mjs --quiet",
