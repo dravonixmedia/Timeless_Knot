@@ -4,7 +4,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { assignSlots, composeGallery } from "../../src/lib/compose-gallery.ts";
+import { assignSlots, composeGallery, toMedia } from "../../src/lib/compose-gallery.ts";
 
 const P = (n) => ({ src: `/p${n}.jpg`, width: 800, height: 1200, alt: `p${n}` });
 const L = (n) => ({ src: `/l${n}.jpg`, width: 1500, height: 1000, alt: `l${n}` });
@@ -55,4 +55,9 @@ test("a mismatched photograph still fills a slot rather than leaving it empty", 
   assert.equal(out.tall.src, "/p1.jpg");
   assert.equal(out.wide.src, "/p2.jpg");
   assert.deepEqual(extra, []);
+});
+
+test("fingerprinted photographs use their content-addressed URL", () => {
+  assert.equal(toMedia({ src: "/media/home/hero/hero%20one.jpg", width: 3, height: 2, alt: "a", hash: "0123456789abcdef" }).src, "/media-cache/0123456789abcdef/hero%20one.jpg");
+  assert.equal(toMedia({ src: "/media/a.jpg", width: 3, height: 2, alt: "a" }).src, "/media/a.jpg", "unhashed images keep their path");
 });

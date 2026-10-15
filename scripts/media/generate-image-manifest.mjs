@@ -11,13 +11,19 @@
  *   2. public/.assetsignore — keeps everything that is NOT a published,
  *      referenced image or video (drafts, unsupported files, notes, unapproved
  *      folders, oversized files) out of the Cloudflare static-asset upload.
+ *   3. public/media-cache/<content hash>/<file> — a copy of every published
+ *      photograph at a content-addressed URL. The URL changes whenever the
+ *      photograph's bytes change, so it can be cached as immutable by browsers
+ *      and Cloudflare (public/_headers) and a replaced photograph — even one
+ *      uploaded under the same filename — is picked up on the next deployment.
  *
  * Content problems never break the build: the affected image or story is
  * skipped and reported. Run with --strict to exit non-zero on any warning
  * (useful as a pre-merge check: `npm run media:check`).
  */
 
-import { readdir, readFile, stat, writeFile, mkdir } from "node:fs/promises";
+import { readdir, readFile, stat, writeFile, mkdir, rm, copyFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -70,6 +76,8 @@ const collator = new Intl.Collator("en", { numeric: true, sensitivity: "base" })
 const byName = (a, b) => collator.compare(a, b) || (a < b ? -1 : a > b ? 1 : 0);
 
 const toPosix = (p) => p.split(path.sep).join("/");
+/** Content fingerprint: first 16 hex chars of the SHA-256 of the file's bytes. */
+export const contentHash = (buf) => createHash("sha256").update(buf).digest("hex").slice(0, 16);
 const publicUrl = (relFromPublic) => "/" + toPosix(relFromPublic).split("/").map(encodeURIComponent).join("/");
 const isHidden = (name) => name.startsWith(".") || name.startsWith("_");
 
@@ -194,8 +202,10 @@ async function readImages(absDir, publicDir, report, { order } = {}) {
       continue;
     }
     let dims;
+    let bytes;
     try {
-      dims = imageSize(await readFile(abs));
+      bytes = await readFile(abs);
+      dims = imageSize(bytes);
     } catch {
       dims = null;
     }
@@ -220,6 +230,7 @@ async function readImages(absDir, publicDir, report, { order } = {}) {
       rel,
       width: rotated ? dims.height : dims.width,
       height: rotated ? dims.width : dims.height,
+      hash: contentHash(bytes),
     });
   }
   return images;
@@ -432,7 +443,8 @@ export async function selectHomeVideo(publicDir, report) {
       report.warn(`${rel}: ${(size / 1048576).toFixed(1)} MB exceeds Cloudflare's 25 MB asset limit — skipped (please compress; see docs/IMAGE-UPLOADS.md)`);
       continue;
     }
-    const info = readMp4(await readFile(abs));
+    const bytes = await readFile(abs);
+    const info = readMp4(bytes);
     if (!info) {
       report.warn(`${rel}: not a readable MP4 video — skipped`);
       continue;
@@ -443,7 +455,7 @@ export async function selectHomeVideo(publicDir, report) {
     }
     if (!info.fastStart) report.warn(`${rel}: not optimised for streaming — playback starts only after a large part downloads (export with "fast start" / "web optimised")`);
     if (size > LARGE_VIDEO_BYTES) report.warn(`${rel}: ${(size / 1048576).toFixed(1)} MB — consider compressing to under 15 MB for faster loading`);
-    chosen = { file: name, src: publicUrl(path.relative(publicDir, abs)), type: "video/mp4", width: info.width, height: info.height, duration: info.duration, hasAudio: info.hasAudio, bytes: size };
+    chosen = { file: name, src: publicUrl(path.relative(publicDir, abs)), type: "video/mp4", width: info.width, height: info.height, duration: info.duration, hasAudio: info.hasAudio, bytes: size, hash: contentHash(bytes) };
   }
   if (!chosen) return null;
 
@@ -455,14 +467,18 @@ export async function selectHomeVideo(publicDir, report) {
   if (posterName) {
     const abs = path.join(absDir, posterName);
     let dims = null;
+    let bytes;
     try {
-      if ((await stat(abs)).size <= MAX_FILE_BYTES) dims = imageSize(await readFile(abs));
+      if ((await stat(abs)).size <= MAX_FILE_BYTES) {
+        bytes = await readFile(abs);
+        dims = imageSize(bytes);
+      }
     } catch {
       dims = null;
     }
     if (dims?.width && dims?.height) {
       const rotated = dims.orientation && dims.orientation >= 5;
-      poster = { src: publicUrl(path.relative(publicDir, abs)), width: rotated ? dims.height : dims.width, height: rotated ? dims.width : dims.height, alt: "" };
+      poster = { src: publicUrl(path.relative(publicDir, abs)), width: rotated ? dims.height : dims.width, height: rotated ? dims.width : dims.height, alt: "", hash: contentHash(bytes) };
     } else {
       report.warn(`${where}/${posterName}: unreadable or oversized poster image — the video is shown without it`);
     }
@@ -489,7 +505,36 @@ function isRecognisedLocation(relFromPublic) {
 /* Main                                                                      */
 /* ------------------------------------------------------------------------ */
 
-export async function generateManifest({ publicDir, outFile, ignoreFile }) {
+/** Every manifest image (anything with a src and a content hash), wherever it is nested. */
+function collectImages(node, out = []) {
+  if (Array.isArray(node)) node.forEach((n) => collectImages(n, out));
+  else if (node && typeof node === "object") {
+    if (typeof node.src === "string" && typeof node.hash === "string" && node.type !== "video/mp4") out.push(node);
+    Object.values(node).forEach((n) => collectImages(n, out));
+  }
+  return out;
+}
+
+/**
+ * Writes each published photograph to <cacheDir>/<hash>/<file>. The directory
+ * is rebuilt from scratch, so photographs that were replaced or removed leave
+ * nothing behind.
+ */
+async function writeFingerprintedCopies(publicDir, cacheDir, manifest) {
+  await rm(cacheDir, { recursive: true, force: true });
+  const done = new Set();
+  for (const img of collectImages(manifest)) {
+    const name = decodeURIComponent(img.src.split("/").pop());
+    const dest = path.join(cacheDir, img.hash, name);
+    if (done.has(dest)) continue;
+    done.add(dest);
+    await mkdir(path.dirname(dest), { recursive: true });
+    await copyFile(path.join(publicDir, ...img.src.split("/").map(decodeURIComponent)), dest);
+  }
+  return done.size;
+}
+
+export async function generateManifest({ publicDir, outFile, ignoreFile, cacheDir }) {
   const mediaDir = path.join(publicDir, "media");
   const warnings = [];
   const notes = [];
@@ -569,6 +614,7 @@ export async function generateManifest({ publicDir, outFile, ignoreFile }) {
   const manifest = { version: 1, collections, galleries, stories, video };
   await mkdir(path.dirname(outFile), { recursive: true });
   await writeFile(outFile, JSON.stringify(manifest, null, 2) + "\n");
+  const fingerprinted = cacheDir ? await writeFingerprintedCopies(publicDir, cacheDir, manifest) : 0;
 
   // Everything under /media that is not a published image or video stays out of the upload.
   const unpublished = [];
@@ -600,7 +646,7 @@ export async function generateManifest({ publicDir, outFile, ignoreFile }) {
     );
   }
 
-  return { manifest, warnings, notes, unpublished };
+  return { manifest, warnings, notes, unpublished, fingerprinted };
 }
 
 /* ------------------------------------------------------------------------ */
@@ -612,10 +658,11 @@ if (isCli) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const strict = process.argv.includes("--strict");
   const quiet = process.argv.includes("--quiet");
-  const { manifest, warnings, notes, unpublished } = await generateManifest({
+  const { manifest, warnings, notes, unpublished, fingerprinted } = await generateManifest({
     publicDir: path.join(root, "public"),
     outFile: path.join(root, "src/content/generated/media-manifest.json"),
     ignoreFile: path.join(root, "public/.assetsignore"),
+    cacheDir: path.join(root, "public/media-cache"),
   });
   const counts = [...Object.entries(manifest.collections), ...Object.entries(manifest.galleries).map(([k, v]) => [`gallery/${k}`, v])]
     .map(([k, v]) => `${k}: ${v.length}`)
@@ -623,7 +670,7 @@ if (isCli) {
   const film = manifest.video
     ? `home video: ${decodeURIComponent(manifest.video.src.split("/").pop())} (${manifest.video.width}×${manifest.video.height}, ${(manifest.video.bytes / 1048576).toFixed(1)} MB${manifest.video.poster ? ", poster" : ""})`
     : "home video: none";
-  console.log(`[media] ${manifest.stories.length} published stor${manifest.stories.length === 1 ? "y" : "ies"}; ${counts}; ${film}; ${unpublished.length} file(s) withheld from upload`);
+  console.log(`[media] ${manifest.stories.length} published stor${manifest.stories.length === 1 ? "y" : "ies"}; ${counts}; ${film}; ${fingerprinted} fingerprinted photo URL(s); ${unpublished.length} file(s) withheld from upload`);
   if (!quiet) notes.forEach((m) => console.log(`[media] note: ${m}`));
   warnings.forEach((m) => console.warn(`[media] warning: ${m}`));
   if (strict && warnings.length) {

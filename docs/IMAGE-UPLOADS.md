@@ -171,8 +171,8 @@ FFmpeg: `ffmpeg -i master.mov -c:v libx264 -preset slow -crf 23 -maxrate 6M -buf
 ### Replacing or removing the film
 
 - **Replace:** upload the new MP4 (with its poster) and delete the old files in
-  the same pull request. Giving the new file a new name (e.g. `02-…`) makes sure
-  every visitor gets the new version straight away.
+  the same pull request. Keeping the same filename is fine — the site detects
+  the new content and every visitor gets the new version after the deployment.
 - **Remove:** delete the MP4 (and poster) from the folder and merge. After the
   deployment the film section disappears from the home page.
 
@@ -256,7 +256,16 @@ site — fields you leave out are simply not shown.
   which answers HTTP range requests with `206 Partial Content` (required by Safari / iOS).
   Player: `src/components/film/HomeFilm.tsx`.
 - Generator: `scripts/media/generate-image-manifest.mjs` (runs in `npm run build`,
-  `npm run dev` and after `npm install`). Output: `src/content/generated/media-manifest.json`
-  and `public/.assetsignore` (both generated, not committed).
+  `npm run dev` and after `npm install`). Output: `src/content/generated/media-manifest.json`,
+  `public/.assetsignore` and `public/media-cache/` (all generated, not committed).
+- Caching: every published photograph is copied to `/media-cache/<content hash>/<file>`
+  and the site references that URL. `public/_headers` marks `/media-cache/*` and
+  `/_next/static/*` immutable (both are content-addressed); OpenNext then marks the
+  optimised `/_next/image` response immutable for browsers, and `custom-worker.ts`
+  (wrangler `main`) stores it in Cloudflare's edge cache (`X-Image-Cache: HIT/MISS`).
+  Replacing a photograph — even under the same filename — changes its hash, URL and
+  cache key on the next deployment, so nothing stale is served. HTML and `/media/*`
+  originals keep revalidated caching. The film stream URL carries the MP4's hash
+  (`/film/<file>?v=<hash>`) and is cached as immutable for that hash only.
 - Typed access and slot/gallery logic: `src/content/media.ts`, `src/lib/compose-gallery.ts`.
 - Tests: `npm test`. Content check: `npm run media:check`.

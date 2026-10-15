@@ -8,7 +8,8 @@ import { mkdtemp, mkdir, copyFile, writeFile, rm, readFile, truncate } from "nod
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { generateManifest, describeFromFilename, validateStoryMetadata } from "./generate-image-manifest.mjs";
+import { generateManifest, describeFromFilename, validateStoryMetadata, contentHash } from "./generate-image-manifest.mjs";
+import { readdir } from "node:fs/promises";
 
 const FIX = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures");
 
@@ -293,4 +294,35 @@ test("metadata validation explains every problem", () => {
   assert.deepEqual(validateStoryMetadata(story()), []);
   const problems = validateStoryMetadata({ published: "true", category: "Party", featured: "no", introduction: "text" });
   assert.equal(problems.length, 5);
+});
+
+test("published photographs are copied to content-addressed URLs; replacing one changes its URL", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "tk-media-"));
+  const publicDir = path.join(root, "public");
+  const cacheDir = path.join(publicDir, "media-cache");
+  const hero = path.join(publicDir, "media/home/hero/hero photo.jpg");
+  await mkdir(path.dirname(hero), { recursive: true });
+  await copyFile(path.join(FIX, "landscape.jpg"), hero);
+  await mkdir(path.join(publicDir, "media/weddings"), { recursive: true });
+  await copyFile(path.join(FIX, "portrait.jpg"), path.join(publicDir, "media/weddings/wed 01.jpg"));
+  const run = () => generateManifest({ publicDir, outFile: path.join(root, "m.json"), cacheDir });
+
+  const first = await run();
+  const img = first.manifest.collections["home/hero"][0];
+  assert.equal(img.src, "/media/home/hero/hero%20photo.jpg", "the original path is kept in the manifest");
+  assert.equal(img.hash, contentHash(await readFile(hero)));
+  assert.equal(first.fingerprinted, 2);
+  assert.deepEqual(await readFile(path.join(cacheDir, img.hash, "hero photo.jpg")), await readFile(hero), "byte-identical copy");
+
+  // Re-running with the same bytes keeps the same URL.
+  assert.equal((await run()).manifest.collections["home/hero"][0].hash, img.hash);
+
+  // Replace the photograph under the same filename: new hash, new URL, old copy gone.
+  await copyFile(path.join(FIX, "portrait.jpg"), hero);
+  const second = await run();
+  const replaced = second.manifest.collections["home/hero"][0];
+  assert.notEqual(replaced.hash, img.hash);
+  assert.ok((await readdir(cacheDir)).includes(replaced.hash));
+  assert.ok(!(await readdir(cacheDir)).includes(img.hash), "stale copies are removed");
+  await rm(root, { recursive: true, force: true });
 });

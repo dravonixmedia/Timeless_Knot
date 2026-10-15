@@ -34,8 +34,14 @@ export async function GET(request: Request, { params }: RouteContext<"/film/[fil
   const headers = new Headers({
     "Content-Type": "video/mp4",
     "Accept-Ranges": "bytes",
-    // Replacing the film usually means a new filename; an hour bounds staleness otherwise.
-    "Cache-Control": "public, max-age=3600",
+    // The player's URL carries the film's content hash (?v=…), so that URL can
+    // never point at different bytes and is cached for a year: resuming or
+    // revisiting re-uses what the browser already holds. Any other URL keeps a
+    // short lifetime, so a replaced film is never served stale for long.
+    "Cache-Control":
+      video.hash && new URL(request.url).searchParams.get("v") === video.hash
+        ? "public, max-age=31536000, immutable"
+        : "public, max-age=3600",
   });
   const etag = asset.headers.get("etag");
   if (etag) headers.set("ETag", etag);

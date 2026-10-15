@@ -1,0 +1,18 @@
+# Cloudflare Workers static-asset response headers (applied by the platform;
+# this file is not served). Only content-addressed URLs are cached long-term:
+#
+# - /_next/static/* — Next.js build output; every filename contains a content
+#   hash, so a changed file always has a new URL.
+# - /media-cache/<hash>/* — photographs copied at build time to a URL derived
+#   from their bytes (scripts/media/generate-image-manifest.mjs). A replaced
+#   photograph gets a new hash and URL. OpenNext's image optimiser reads this
+#   header and then marks the optimised /_next/image response immutable too.
+#
+# HTML, /media/* originals, the film route and everything else keep their
+# default (revalidated) caching.
+
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/media-cache/*
+  Cache-Control: public, max-age=31536000, immutable
