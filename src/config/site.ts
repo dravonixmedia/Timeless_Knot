@@ -6,6 +6,8 @@
  * displaying invented details. Update these values as the client confirms them.
  */
 
+import { normalizeWhatsappNumber } from "@/lib/whatsapp";
+
 export type NavItem = { label: string; href: string };
 
 export type SiteConfig = {
@@ -26,7 +28,11 @@ export type SiteConfig = {
   contact: {
     email: string | null;
     phone: string | null;
-    /** International format digits only, e.g. "919800000000". Shown only when set. */
+    /**
+     * International format digits only (country code first), from
+     * NEXT_PUBLIC_WHATSAPP_NUMBER. Null — and every WhatsApp link hidden —
+     * until a valid number is configured.
+     */
     whatsapp: string | null;
   };
   social: {
@@ -51,7 +57,7 @@ export const site: SiteConfig = {
   contact: {
     email: null,
     phone: null,
-    whatsapp: null,
+    whatsapp: normalizeWhatsappNumber(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER),
   },
   social: {
     instagram: null,

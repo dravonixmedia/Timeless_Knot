@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { site } from "@/config/site";
+import { whatsappHref } from "@/lib/whatsapp";
 import { Logo } from "@/components/brand/Logo";
 import { EucalyptusSprig } from "@/components/brand/Botanical";
 import { CurrentYear } from "./CurrentYear";
@@ -12,7 +13,8 @@ export function Footer() {
     <footer className="relative overflow-hidden bg-forest text-ivory">
       <EucalyptusSprig className="pointer-events-none absolute -right-16 top-10 hidden h-[34rem] w-auto rotate-[14deg] text-sage opacity-[0.14] md:block" />
 
-      <div className="frame relative pb-10 pt-[var(--section-tight)]">
+      {/* Extra bottom clearance keeps the credit row clear of the floating WhatsApp button. */}
+      <div className={`frame relative pt-[var(--section-tight)] ${whatsapp ? "pb-28" : "pb-10"}`}>
         <div className="editorial-grid gap-y-16">
           <div className="col-span-12 lg:col-span-6">
             <Link href="/" aria-label={`${site.name} — home`} className="inline-block">
@@ -62,7 +64,7 @@ export function Footer() {
               )}
               {whatsapp && (
                 <li>
-                  <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="link-draw hover:text-ivory">
+                  <a href={whatsappHref(whatsapp)} target="_blank" rel="noopener noreferrer" className="link-draw hover:text-ivory">
                     WhatsApp
                   </a>
                 </li>

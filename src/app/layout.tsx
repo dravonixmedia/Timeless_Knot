@@ -5,6 +5,7 @@ import { site } from "@/config/site";
 import { Header } from "@/components/layout/Header";
 import { RouteChrome } from "@/components/layout/RouteChrome";
 import { Footer } from "@/components/layout/Footer";
+import { WhatsAppButton } from "@/components/contact/WhatsAppButton";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { RevealObserver } from "@/components/motion/RevealObserver";
 import { JsonLd, organizationSchema } from "@/lib/seo";
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
         <Footer />
+        <WhatsAppButton />
         <SmoothScroll />
         <RevealObserver />
       </body>
