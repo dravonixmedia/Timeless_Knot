@@ -1,4 +1,4 @@
-# Uploading photographs — Timeless Knot
+# Uploading photographs and the homepage film — Timeless Knot
 
 Photographs are managed entirely through folders in this repository. Upload
 images to the right folder, merge to `main`, and Cloudflare rebuilds the site.
@@ -26,9 +26,10 @@ simply left out until it is fixed.
 public/media/
 ├── home/
 │   ├── hero/          Home page hero (the first image by name is used)
-│   └── featured/      Home page photographs: “The Art of Remembering” portrait,
-│                      the full-width “Moments Pass” photograph and the two small
-│                      photographs beside the closing invitation (on every page)
+│   ├── featured/      Home page photographs: “The Art of Remembering” portrait,
+│   │                  the full-width “Moments Pass” photograph and the two small
+│   │                  photographs beside the closing invitation (on every page)
+│   └── video/         Home page cinematic film (one MP4 + optional poster) — see below
 ├── about/             Our Story page (4 photographs)
 ├── experience/        The Experience page (2 photographs)
 ├── contact/           Contact page portrait (1 photograph)
@@ -120,6 +121,69 @@ public/media/weddings/anika-and-rohan/
   (the Portfolio stays visible), and the home page shows one photograph from each
   portfolio category instead of featured stories.
 
+## Homepage film (`home/video/`)
+
+The “Love, In Motion” section on the home page plays the film uploaded to:
+
+```
+public/media/home/video/
+```
+
+**With no valid video in this folder the whole section is hidden** — no
+placeholder, no play button, no gap. Upload a video and it appears
+automatically after the next deployment.
+
+### Uploading
+
+1. On GitHub open `public/media/home/video/` → **Add file → Upload files**.
+2. Upload the **MP4** (and, optionally, a poster image — see below).
+3. Commit to a branch, open a pull request, review and merge into `main`.
+4. Cloudflare rebuilds the site; when the deployment succeeds the film is live.
+   The build log shows the result, e.g.
+   `[media] … home video: 01-timeless-knot-film.mp4 (1920×1080, 14.2 MB, poster)`.
+
+### Export settings
+
+| Setting | Recommended |
+| --- | --- |
+| Container / codec | **MP4, H.264** (also called AVC). HEVC/H.265, ProRes, MOV and WebM are not used. |
+| Resolution | **1920×1080** (1280×720 for a lighter file). Landscape 16:9 is best; other shapes are shown uncropped. |
+| Frame rate | 24 or 25 fps |
+| Bitrate | about **4–6 Mbps** for 1080p (2–3 Mbps for 720p) |
+| Length | a **30–90 second** highlight loop |
+| File size | **under 15 MB recommended — 25 MB maximum** (Cloudflare’s per-file limit; larger files are skipped automatically so the deployment never fails) |
+| Fast start | turn on **“Fast start” / “Web optimised” / “Optimize for web”** so playback begins before the whole file downloads |
+| Audio | optional (AAC). The film always starts **muted**; visitors can turn sound on. |
+
+HandBrake: preset *Web → Vimeo YouTube HQ 1080p30*, tick **Web Optimized**.
+FFmpeg: `ffmpeg -i master.mov -c:v libx264 -preset slow -crf 23 -maxrate 6M -bufsize 12M -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart 01-timeless-knot-film.mp4`
+
+### Filenames and the poster
+
+- Use lowercase words with a number prefix, e.g. `01-timeless-knot-film.mp4`.
+- **Only one film is shown.** If the folder holds several MP4s, the first by
+  name is used (`01-…` before `02-…`); the others are not published.
+- **Poster (optional, recommended):** a still from the film, saved as a JPG with
+  the **same name as the video** (`01-timeless-knot-film.jpg`) or named
+  `poster.jpg`. It shows while the film loads and for visitors who prefer reduced
+  motion. Without a poster the film’s first frame is used — nothing is generated.
+
+### Replacing or removing the film
+
+- **Replace:** upload the new MP4 (with its poster) and delete the old files in
+  the same pull request. Giving the new file a new name (e.g. `02-…`) makes sure
+  every visitor gets the new version straight away.
+- **Remove:** delete the MP4 (and poster) from the folder and merge. After the
+  deployment the film section disappears from the home page.
+
+### How it plays
+
+Muted, looping and inline (no full-screen takeover on phones), starting only
+when the section scrolls into view — nothing is downloaded before then. It
+pauses when scrolled away. Visitors get **Play/Pause** and **Sound on/off**
+controls. With “reduce motion” or Data Saver turned on, it does not autoplay:
+the poster is shown with a Play button.
+
 ## `story.json`
 
 A story is **only published when** its folder has a valid `story.json` with
@@ -187,6 +251,10 @@ site — fields you leave out are simply not shown.
 
 ## Developers
 
+- Homepage film: the MP4 is validated at build time by `scripts/media/read-mp4.mjs`
+  (H.264, dimensions, fast start) and streamed through `src/app/film/[file]/route.ts`,
+  which answers HTTP range requests with `206 Partial Content` (required by Safari / iOS).
+  Player: `src/components/film/HomeFilm.tsx`.
 - Generator: `scripts/media/generate-image-manifest.mjs` (runs in `npm run build`,
   `npm run dev` and after `npm install`). Output: `src/content/generated/media-manifest.json`
   and `public/.assetsignore` (both generated, not committed).

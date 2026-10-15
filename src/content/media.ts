@@ -37,15 +37,36 @@ export type ManifestStory = {
 
 export type GalleryCategory = "weddings" | "pre-wedding" | "couples";
 
+/** The homepage film uploaded to public/media/home/video/ (H.264 MP4). */
+export type HomeVideo = {
+  src: string;
+  type: "video/mp4";
+  /** Display dimensions (rotation applied) — used to size the frame without layout shift. */
+  width: number;
+  height: number;
+  /** Seconds. */
+  duration: number;
+  hasAudio: boolean;
+  bytes: number;
+  poster?: ManifestImage;
+};
+
 export type MediaManifest = {
   version: 1;
   collections: Record<SiteCollection, ManifestImage[]>;
   /** Category galleries: photographs placed directly in weddings/, pre-wedding/, couples/. */
   galleries: Record<GalleryCategory, ManifestImage[]>;
   stories: ManifestStory[];
+  /** Null while no valid video is uploaded — the homepage film section is then not rendered. */
+  video: HomeVideo | null;
 };
 
 export const manifest = manifestJson as MediaManifest;
+
+/** The uploaded homepage film, or undefined when none is published. */
+export function getHomeVideo(): HomeVideo | undefined {
+  return manifest.video ?? undefined;
+}
 
 /**
  * Fills a page's photograph slots from a collection.

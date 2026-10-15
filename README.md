@@ -114,9 +114,10 @@ folders, `story.json` fields and image guidelines.
 - `npm test` runs the manifest and gallery-composition tests.
 - Image positions without a photograph are left out of the page; there are no placeholder images or demo stories.
 
-**Films:** set `film.src` (self-hosted MP4/WebM) or `film.embedUrl` (YouTube-nocookie / Vimeo) with a
-real poster. Set `showreel` in `content/imagery.ts` to feature one on the home page. The home film section
-is hidden until a playable film exists.
+**Homepage film:** upload one H.264 MP4 (under 25 MB, ideally under 15 MB) to `public/media/home/video/`
+— it appears in the home page film section automatically after the next deployment; with no video the
+section is hidden. See [docs/IMAGE-UPLOADS.md](docs/IMAGE-UPLOADS.md#homepage-film-homevideo).
+Story films: set `film.embedUrl` (YouTube-nocookie / Vimeo) in `story.json`.
 
 **Logo:** set `site.logo` to the official SVG/PNG files (light and dark versions); the provisional
 typographic wordmark is then replaced everywhere. Replace `src/app/icon.svg` with the official mark.
