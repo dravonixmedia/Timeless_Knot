@@ -83,12 +83,15 @@ src/
 
 ## Adding real content
 
-**Photographs:** put files in `public/media/` and set `src`, accurate `alt`, `width` and `height` on the
-relevant `Media` object (in `content/imagery.ts` or a story). Plates disappear automatically.
+**Photographs and wedding stories are folder-based — no code changes needed.** Upload images to the
+right folder in `public/media/` (stories also need a `story.json`), merge to `main`, and the Cloudflare
+build discovers them automatically. See **[docs/IMAGE-UPLOADS.md](docs/IMAGE-UPLOADS.md)** for the
+folders, `story.json` fields and image guidelines.
 
-**Wedding stories:** add entries to `content/stories.ts`. Remove `isDemo` only for real, client-approved
-weddings — demo stories are labelled on screen, `noindex`, and excluded from the sitemap. Gallery
-sequences are composed from blocks: `full`, `single` (left / right / center), `pair`, `trio`, `statement`.
+- `npm run media` regenerates the image manifest (also runs in `build`, `dev` and after install).
+- `npm run media:check` fails on any content problem — useful before merging uploads.
+- `npm test` runs the manifest and gallery-composition tests.
+- Demonstration stories show only until the first real story is published.
 
 **Films:** set `film.src` (self-hosted MP4/WebM) or `film.embedUrl` (YouTube-nocookie / Vimeo) with a
 real poster. Set `showreel` in `content/imagery.ts` to feature one on the home page.

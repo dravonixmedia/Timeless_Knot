@@ -1,13 +1,15 @@
 import type { Film, Media } from "./types";
+import { fillSlots } from "./media";
 
 /**
  * Site-wide photography slots.
  *
- * No photographs have been supplied yet, so each slot renders an art-directed
- * placeholder plate describing the intended image. To go live, add the file to
- * /public/media and set `src` (plus accurate `alt`, `width` and `height`).
+ * Each slot starts as an art-directed placeholder plate describing the
+ * intended image. Photographs uploaded to the matching folder in
+ * public/media/ replace them automatically at build time (see `imagery`
+ * below and docs/IMAGE-UPLOADS.md) — no code changes needed.
  */
-export const imagery = {
+const placeholders = {
   homeHero: {
     alt: "Placeholder for the home page hero photograph",
     width: 2400,
@@ -100,6 +102,32 @@ export const imagery = {
     brief: "A soft, quiet portrait",
   },
 } satisfies Record<string, Media>;
+
+const p = placeholders;
+
+/**
+ * Slots grouped by upload folder. Within a folder, photographs are assigned in
+ * filename order, matching portrait / landscape to each slot's art direction.
+ */
+export const imagery = {
+  // public/media/home/hero/ — the first photograph is the home page hero
+  ...fillSlots("home/hero", { homeHero: p.homeHero }),
+  // public/media/home/featured/ — home page editorial photographs (also the closing invitation)
+  ...fillSlots("home/featured", {
+    artOfRemembering: p.artOfRemembering,
+    editorialMoment: p.editorialMoment,
+    invitationLeft: p.invitationLeft,
+    invitationRight: p.invitationRight,
+  }),
+  // public/media/about/ — Our Story page
+  ...fillSlots("about", { storyHero: p.storyHero, storyVision: p.storyVision, storyPairA: p.storyPairA, storyPairB: p.storyPairB }),
+  // public/media/experience/ — The Experience page
+  ...fillSlots("experience", { experienceHero: p.experienceHero, experienceDetail: p.experienceDetail }),
+  // public/media/contact/ — Contact page portrait
+  ...fillSlots("contact", { contact: p.contact }),
+  // Film poster placeholder (real posters come from a story's film metadata)
+  filmPoster: p.filmPoster,
+};
 
 /**
  * Optional studio showreel for the home page. Leave undefined until a real

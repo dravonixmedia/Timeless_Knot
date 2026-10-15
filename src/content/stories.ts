@@ -1,13 +1,15 @@
 import type { Media, PlateTone, WeddingStory } from "./types";
+import { storiesFromManifest } from "./media";
 
 /**
  * Wedding stories.
  *
- * IMPORTANT: no real client weddings have been supplied yet. Every entry below
- * is DEMONSTRATION content (`isDemo: true`) that shows how a story will be art
- * directed. Demo entries carry no couple names, locations or dates, are labelled
- * on screen, excluded from the sitemap and marked noindex. Replace them with
- * verified client stories (and real photographs via `src`) before launch.
+ * Real stories come from folders in public/media/{weddings,pre-wedding,couples}/
+ * with a valid story.json (see docs/IMAGE-UPLOADS.md) and are discovered at
+ * build time. Until at least one is published, the DEMONSTRATION entries below
+ * (`isDemo: true`) show how a story will be art directed. Demo entries carry no
+ * couple names, locations or dates, are labelled on screen, excluded from the
+ * sitemap and marked noindex — and disappear entirely once a real story exists.
  */
 
 const plate = (
@@ -18,7 +20,7 @@ const plate = (
   alt = `Placeholder for a photograph: ${brief.toLowerCase()}`,
 ): Media => ({ width, height, brief, tone, alt });
 
-export const stories: WeddingStory[] = [
+const demoStories: WeddingStory[] = [
   {
     slug: "under-the-eucalyptus",
     title: "Under the Eucalyptus",
@@ -112,12 +114,20 @@ export const stories: WeddingStory[] = [
   },
 ];
 
+const published = storiesFromManifest();
+
+/** Published stories replace the demonstrations entirely — the two never mix. */
+export const stories: WeddingStory[] = published.length ? published : demoStories;
+
 export function getStories() {
   return stories;
 }
 
+/** Featured stories first, topped up with the latest others so the section is never half empty. */
 export function getFeaturedStories(limit = 3) {
-  return stories.filter((story) => story.featured).slice(0, limit);
+  const featured = stories.filter((story) => story.featured);
+  const others = stories.filter((story) => !story.featured);
+  return [...featured, ...others].slice(0, limit);
 }
 
 export function getStory(slug: string) {
