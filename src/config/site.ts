@@ -19,11 +19,15 @@ import { resolveWhatsappUrl } from "@/lib/whatsapp";
  * null (and NEXT_PUBLIC_WHATSAPP_URL is not set at build time), all WhatsApp
  * UI stays hidden. No number is assumed.
  */
-const WHATSAPP_URL: string | null = null;
+const WHATSAPP_URL: string | null = "https://wa.me/917034671830";
 
 const whatsappSource = WHATSAPP_URL ?? process.env.NEXT_PUBLIC_WHATSAPP_URL ?? null;
 const whatsappUrl = resolveWhatsappUrl(whatsappSource);
-if (whatsappSource && !whatsappUrl) {
+if (!whatsappSource) {
+  console.warn(
+    "[whatsapp] No WhatsApp link configured (WHATSAPP_URL in src/config/site.ts or NEXT_PUBLIC_WHATSAPP_URL) — the floating button and WhatsApp links are not rendered.",
+  );
+} else if (!whatsappUrl) {
   console.warn(
     `[whatsapp] Ignoring invalid WhatsApp link "${whatsappSource}" — expected https://wa.me/<number> or https://wa.me/message/<code>. The WhatsApp button is hidden.`,
   );
