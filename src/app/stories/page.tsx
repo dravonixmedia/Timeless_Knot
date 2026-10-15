@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { getStories, getStoryCategories } from "@/content/stories";
 import { Page } from "@/components/layout/Page";
 import { StoriesArchive } from "@/components/stories/StoriesArchive";
+import { PortfolioGallery } from "@/components/stories/PortfolioGallery";
+import { getCategoryGalleries } from "@/content/media";
 import { Invitation } from "@/components/sections/Invitation";
-import { Lines } from "@/components/ui/Typography";
+import { Eyebrow, Lines, reveal } from "@/components/ui/Typography";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
@@ -16,6 +18,7 @@ export const metadata: Metadata = pageMetadata({
 export default function StoriesPage() {
   const stories = getStories();
   const hasDemo = stories.some((story) => story.isDemo);
+  const galleries = getCategoryGalleries();
 
   return (
     <Page>
@@ -48,6 +51,25 @@ export default function StoriesPage() {
             </div>
           </div>
 
+          {galleries.length > 0 && (
+            <section aria-labelledby="portfolio-title" className="pb-[var(--section-tight)]">
+              <div {...reveal("fade")}>
+                <Eyebrow className="text-muted">Portfolio</Eyebrow>
+              </div>
+              <h2 id="portfolio-title" className="sr-only">
+                Portfolio
+              </h2>
+              <div className="mt-8">
+                <PortfolioGallery galleries={galleries} />
+              </div>
+            </section>
+          )}
+
+          {galleries.length > 0 && (
+            <div className="mb-10" {...reveal("fade")}>
+              <Eyebrow className="text-muted">Stories</Eyebrow>
+            </div>
+          )}
           <StoriesArchive stories={stories} categories={getStoryCategories()} />
         </div>
       </section>

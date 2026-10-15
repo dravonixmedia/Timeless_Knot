@@ -38,6 +38,16 @@ export const STORY_ROOTS = {
   couples: "Couple Story",
 };
 
+/**
+ * Category galleries: photographs placed directly in a story root (not in a
+ * story subfolder) form that category's portfolio gallery. No story.json needed.
+ */
+export const GALLERY_LABELS = {
+  weddings: { title: "Weddings", alt: "Wedding photograph by Timeless Knot" },
+  "pre-wedding": { title: "Pre-Wedding", alt: "Pre-wedding portrait by Timeless Knot" },
+  couples: { title: "Couples", alt: "Couple portrait by Timeless Knot" },
+};
+
 export const STORY_CATEGORIES = ["Wedding Photography", "Wedding Film", "Elopement", "Pre-Wedding", "Couple Story"];
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -79,6 +89,9 @@ export function describeFromFilename(file) {
   if (!words.some((w) => /[a-z]{3,}/i.test(w))) return null;
   const text = words.join(" ").toLowerCase();
   if (GENERIC_NAMES.has(text)) return null;
+  // Short fragments ("wed 01", "cou 03") describe nothing.
+  const meaningful = words.filter((w) => /[a-z]{3,}/i.test(w));
+  if (meaningful.length < 2 && !(meaningful.length === 1 && meaningful[0].length >= 5)) return null;
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
@@ -370,7 +383,8 @@ function isRecognisedLocation(relFromPublic) {
   const parts = relFromPublic.split("/").slice(1, -1); // drop "media" and the filename
   const dir = parts.join("/");
   if (SITE_COLLECTIONS.includes(dir)) return true;
-  return parts.length === 2 && Object.hasOwn(STORY_ROOTS, parts[0]);
+  // weddings/<photo> is a category gallery; weddings/<story>/<photo> is a story.
+  return (parts.length === 1 || parts.length === 2) && Object.hasOwn(STORY_ROOTS, parts[0]);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -404,6 +418,26 @@ export async function generateManifest({ publicDir, outFile, ignoreFile }) {
     collections[name] = images;
   }
 
+  // Category galleries: images directly inside weddings/, pre-wedding/, couples/
+  const galleries = {};
+  for (const root of Object.keys(STORY_ROOTS)) {
+    const absDir = path.join(mediaDir, root);
+    const { value: config } = await readJson(path.join(absDir, "images.json"), report);
+    const found = await readImages(absDir, publicDir, report, { order: config?.order });
+    const label = GALLERY_LABELS[root];
+    galleries[root] = withAlt(
+      found,
+      imageOverrides(config, `media/${root}/images.json`, report),
+      { describe: (d) => `${d} — ${label.alt}`, generic: () => label.alt },
+      `media/${root}`,
+      report,
+    ).map(({ file, ...img }) => {
+      void file;
+      return img;
+    });
+    galleries[root].forEach((img) => published.add(img.src));
+  }
+
   // Stories
   const stories = [];
   const seen = new Map();
@@ -427,7 +461,7 @@ export async function generateManifest({ publicDir, outFile, ignoreFile }) {
       byName(a.slug, b.slug),
   );
 
-  const manifest = { version: 1, collections, stories };
+  const manifest = { version: 1, collections, galleries, stories };
   await mkdir(path.dirname(outFile), { recursive: true });
   await writeFile(outFile, JSON.stringify(manifest, null, 2) + "\n");
 
@@ -478,7 +512,9 @@ if (isCli) {
     outFile: path.join(root, "src/content/generated/media-manifest.json"),
     ignoreFile: path.join(root, "public/.assetsignore"),
   });
-  const counts = Object.entries(manifest.collections).map(([k, v]) => `${k}: ${v.length}`).join(", ");
+  const counts = [...Object.entries(manifest.collections), ...Object.entries(manifest.galleries).map(([k, v]) => [`gallery/${k}`, v])]
+    .map(([k, v]) => `${k}: ${v.length}`)
+    .join(", ");
   console.log(`[media] ${manifest.stories.length} published stor${manifest.stories.length === 1 ? "y" : "ies"}; ${counts}; ${unpublished.length} file(s) withheld from upload`);
   if (!quiet) notes.forEach((m) => console.log(`[media] note: ${m}`));
   warnings.forEach((m) => console.warn(`[media] warning: ${m}`));

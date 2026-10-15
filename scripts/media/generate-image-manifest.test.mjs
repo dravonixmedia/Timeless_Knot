@@ -92,16 +92,49 @@ test("files in unrecognised or nested folders are reported and withheld", async 
   const s = await site({
     "wedding/typo.jpg": "fixture:portrait.jpg",
     "about/old/nested.jpg": "fixture:portrait.jpg",
-    "weddings/loose.jpg": "fixture:portrait.jpg",
+    "weddings/2024/loose.jpg": "fixture:portrait.jpg",
     "about/.DS_Store": "x",
   });
   const { warnings } = await s.run();
-  for (const f of ["wedding/typo.jpg", "about/old/nested.jpg", "weddings/loose.jpg"]) {
+  for (const f of ["wedding/typo.jpg", "about/old/nested.jpg"]) {
     assert.ok(warnings.some((w) => w.includes(f) && w.includes("recognised")), `expected a warning for ${f}`);
     assert.ok((await s.ignored()).includes(`/media/${f}`));
   }
   assert.ok(!warnings.some((w) => w.includes(".DS_Store")), "hidden system files are withheld silently");
   assert.ok((await s.ignored()).includes("/media/about/.DS_Store"));
+  await s.cleanup();
+});
+
+test("photos placed directly in a category folder form its gallery — no story.json needed", async () => {
+  const s = await site({
+    "weddings/wed 02.jpg": "fixture:landscape.jpg",
+    "weddings/wed 01.jpg": "fixture:portrait.jpg",
+    "weddings/wed 10.png": "fixture:square.png",
+    "pre-wedding/pre 01.jpg": "fixture:portrait.jpg",
+    "couples/03-golden-hour-walk.jpg": "fixture:wide.jpg",
+    "couples/images.json": { "03-golden-hour-walk.jpg": "The couple walking at golden hour" },
+    "weddings/a-real-story/story.json": { published: true, title: "A Real Story" },
+    "weddings/a-real-story/cover.jpg": "fixture:portrait.jpg",
+    "weddings/draft/story.json": { published: false, title: "Draft" },
+    "weddings/draft/secret.jpg": "fixture:portrait.jpg",
+  });
+  const { manifest, warnings } = await s.run();
+  // natural order and real (uncropped) dimensions
+  assert.deepEqual(manifest.galleries.weddings.map((i) => [i.src, i.width, i.height]), [
+    ["/media/weddings/wed%2001.jpg", 40, 60],
+    ["/media/weddings/wed%2002.jpg", 90, 50],
+    ["/media/weddings/wed%2010.png", 50, 50],
+  ]);
+  assert.equal(manifest.galleries.weddings[0].alt, "Wedding photograph by Timeless Knot");
+  assert.equal(manifest.galleries["pre-wedding"].length, 1);
+  assert.equal(manifest.galleries.couples[0].alt, "The couple walking at golden hour");
+  // stories still need valid metadata and stay separate from galleries
+  assert.deepEqual(manifest.stories.map((st) => st.slug), ["a-real-story"]);
+  assert.ok(!manifest.galleries.weddings.some((i) => i.src.includes("a-real-story") || i.src.includes("draft")));
+  const ignored = await s.ignored();
+  assert.ok(!ignored.some((f) => f.startsWith("/media/weddings/wed")), "gallery photos are uploaded");
+  assert.ok(ignored.includes("/media/weddings/draft/secret.jpg"), "draft stories stay private");
+  assert.ok(!warnings.some((w) => w.includes("wed 0")), "gallery photos are not reported as unrecognised");
   await s.cleanup();
 });
 
@@ -247,6 +280,9 @@ test("alt text from filenames ignores camera names and ordering prefixes", () =>
   assert.equal(describeFromFilename("01-hero.jpg"), null);
   assert.equal(describeFromFilename("cover.png"), null);
   assert.equal(describeFromFilename("hero-at-sunset.jpg"), "Hero at sunset");
+  assert.equal(describeFromFilename("wed 01.jpg"), null);
+  assert.equal(describeFromFilename("cou 03.jpg"), null);
+  assert.equal(describeFromFilename("ceremony.jpg"), "Ceremony");
 });
 
 test("metadata validation explains every problem", () => {
