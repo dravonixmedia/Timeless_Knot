@@ -1,0 +1,36 @@
+{
+  "published": false,
+  "title": "Under the Banyan Tree",
+  "couple": "First Name & First Name",
+  "location": "City, State",
+  "date": "2026-02-14",
+  "featured": true,
+  "cover": "01-couple-under-the-banyan-tree.jpg",
+  "excerpt": "One short sentence for the story card and search results.",
+  "introduction": [
+    "Opening paragraph about the couple and the day — written from real details the couple has approved.",
+    "An optional second paragraph."
+  ],
+  "statements": [
+    "An optional pull quote, shown between photographs."
+  ],
+  "closing": "An optional closing line shown after the gallery.",
+  "order": [
+    "01-couple-under-the-banyan-tree.jpg",
+    "07-first-look.jpg"
+  ],
+  "images": {
+    "07-first-look.jpg": "The bride turning to see the groom for the first time",
+    "12-mehndi-detail.jpg": { "alt": "Close-up of mehndi on the bride's hands", "focal": "50% 35%" }
+  },
+  "film": {
+    "title": "Under the Banyan Tree — Wedding Film",
+    "embedUrl": "https://www.youtube-nocookie.com/embed/VIDEO_ID",
+    "poster": "20-film-still.jpg",
+    "duration": "4 min"
+  },
+  "seo": {
+    "title": "Optional custom page title",
+    "description": "Optional custom search description."
+  }
+}

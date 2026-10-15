@@ -22,6 +22,8 @@ const nextConfig: NextConfig = {
     return [{ source: "/favicon.ico", destination: "/icon.svg", permanent: true }];
   },
   images: {
+    // Only photographs in public/media/ (discovered by the image manifest) are optimised.
+    localPatterns: [{ pathname: "/media/**", search: "" }],
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 828, 1080, 1280, 1600, 1920, 2560],
   },

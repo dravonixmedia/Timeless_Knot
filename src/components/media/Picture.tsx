@@ -5,6 +5,7 @@ type PictureProps = {
   media: Media;
   /** Responsive `sizes` hint for next/image. */
   sizes: string;
+  /** Above-the-fold LCP image (e.g. a hero): preloaded. Everything else lazy-loads. */
   priority?: boolean;
   /**
    * "ratio" (default) keeps the image's intrinsic aspect ratio.
@@ -41,14 +42,14 @@ export function Picture({
   const box = layout === "fill" ? "absolute inset-0" : "relative w-full";
 
   return (
-    <div className={`${box} overflow-hidden ${className}`} style={style}>
+    <div className={`${box} overflow-hidden ${media.src ? "bg-pale-sage" : ""} ${className}`} style={style}>
       {media.src ? (
         <Image
           src={media.src}
           alt={media.alt}
           fill
           sizes={sizes}
-          priority={priority}
+          preload={priority}
           className={`object-cover ${imageClassName}`}
           style={{ objectPosition: media.focal ?? "50% 50%" }}
         />

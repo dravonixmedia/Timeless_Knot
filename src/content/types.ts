@@ -34,7 +34,7 @@ export type Film = {
   duration?: string;
 };
 
-export type StoryCategory = "Wedding Photography" | "Wedding Film" | "Elopement" | "Couple Story";
+export type StoryCategory = "Wedding Photography" | "Wedding Film" | "Elopement" | "Pre-Wedding" | "Couple Story";
 
 export type GalleryBlock =
   | { kind: "full"; image: Media; caption?: string }

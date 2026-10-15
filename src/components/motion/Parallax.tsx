@@ -21,6 +21,9 @@ type ParallaxProps = {
  * image. Disabled entirely for reduced motion.
  */
 export function Parallax({ children, amount = 10, scaleFrom, className = "" }: ParallaxProps) {
+  // Callers may position the frame themselves (e.g. `absolute inset-0` behind a
+  // hero). Adding `relative` as well would override that and collapse it to 0px.
+  const positioned = /(^|\s)(absolute|fixed|sticky)(\s|$)/.test(className);
   const outer = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
 
@@ -53,7 +56,7 @@ export function Parallax({ children, amount = 10, scaleFrom, className = "" }: P
   }, [amount, scaleFrom]);
 
   return (
-    <div ref={outer} className={`relative overflow-hidden ${className}`}>
+    <div ref={outer} className={`${positioned ? "" : "relative "}overflow-hidden ${className}`}>
       <div
         ref={inner}
         className="absolute inset-x-0 will-change-transform"
