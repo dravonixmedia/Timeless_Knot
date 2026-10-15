@@ -19,7 +19,7 @@ import { resolveWhatsappUrl } from "@/lib/whatsapp";
  * null (and NEXT_PUBLIC_WHATSAPP_URL is not set at build time), all WhatsApp
  * UI stays hidden. No number is assumed.
  */
-const WHATSAPP_URL: string | null = null;
+const WHATSAPP_URL: string | null = "https://wa.me/917034671830";
 
 const whatsappSource = WHATSAPP_URL ?? process.env.NEXT_PUBLIC_WHATSAPP_URL ?? null;
 const whatsappUrl = resolveWhatsappUrl(whatsappSource);
