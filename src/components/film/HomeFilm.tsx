@@ -9,6 +9,8 @@ import { toMedia } from "@/lib/compose-gallery";
 type Props = { video: HomeVideo; title?: string };
 
 const REDUCE = "(prefers-reduced-motion: reduce)";
+/** How long the frame must stay well out of view before its source is released. */
+const RELEASE_AFTER_MS = 120000;
 const subscribeMotion = (onChange: () => void) => {
   const query = window.matchMedia(REDUCE);
   query.addEventListener("change", onChange);
@@ -24,6 +26,13 @@ const canAutoplay = () =>
  *
  * - Nothing is downloaded until the frame is near the viewport (`preload="none"`
  *   and no source until then); it pauses whenever it scrolls out of view.
+ * - It buffers ahead (`preload="auto"`) only while it is on screen and playing
+ *   or about to autoplay. Paused or scrolled away it switches to
+ *   `preload="metadata"`, which stops further downloading while keeping what is
+ *   already buffered, so resuming does not fetch it again.
+ * - As a safety net for browsers that ignore that switch, the source is released
+ *   after the frame has been well away from the viewport for a while; it is
+ *   re-attached before the frame scrolls back in and resumes from the same moment.
  * - Plays muted, inline and looping where the browser allows autoplay. If
  *   autoplay is refused — or the visitor prefers reduced motion or has Data
  *   Saver on — it waits on its poster / first frame for a press of Play.
@@ -34,10 +43,13 @@ const canAutoplay = () =>
 export function HomeFilm({ video, title = "Timeless Knot wedding film" }: Props) {
   const frame = useRef<HTMLDivElement>(null);
   const ref = useRef<HTMLVideoElement>(null);
+  /** The source is attached: the frame is near the viewport, or left it only moments ago. */
   const [near, setNear] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(true);
   const [shown, setShown] = useState(false);
+  /** A meaningful part of the frame is on screen. */
+  const [onScreen, setOnScreen] = useState(false);
   /** null on the server: avoids flashing a Play button before autoplay starts. */
   const autoplay = useSyncExternalStore<boolean | null>(subscribeMotion, canAutoplay, () => null);
   /** The browser refused autoplay (e.g. Low Power Mode): wait for a press of Play. */
@@ -46,6 +58,8 @@ export function HomeFilm({ video, title = "Timeless Knot wedding film" }: Props)
   /** Mirrors pausedByUser for the observers: never resume a film the visitor paused. */
   const userPaused = useRef(false);
   const inView = useRef(false);
+  /** Playback position to restore when a released source is attached again. */
+  const resumeAt = useRef(0);
 
   const tryPlay = useCallback(() => {
     ref.current?.play().then(
@@ -70,13 +84,18 @@ export function HomeFilm({ video, title = "Timeless Knot wedding film" }: Props)
   useEffect(() => {
     const el = frame.current;
     if (!el) return;
-    // Attach the source a little before the frame scrolls in…
+    // Attach the source a little before the frame scrolls in, and release it
+    // once the frame has stayed well away for a while (stops the download).
+    let release: ReturnType<typeof setTimeout> | undefined;
     const preload = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setNear(true);
-          preload.disconnect();
-        }
+        clearTimeout(release);
+        if (entry.isIntersecting) setNear(true);
+        else
+          release = setTimeout(() => {
+            setNear(false);
+            setShown(false);
+          }, RELEASE_AFTER_MS);
       },
       { rootMargin: "400px 0px" },
     );
@@ -85,6 +104,7 @@ export function HomeFilm({ video, title = "Timeless Knot wedding film" }: Props)
       ([entry]) => {
         const v = ref.current;
         inView.current = entry.isIntersecting;
+        setOnScreen(entry.isIntersecting);
         if (!v) return;
         if (entry.isIntersecting) {
           if (allowed.current && !userPaused.current) tryPlay();
@@ -97,15 +117,23 @@ export function HomeFilm({ video, title = "Timeless Knot wedding film" }: Props)
     preload.observe(el);
     visible.observe(el);
     return () => {
+      clearTimeout(release);
       preload.disconnect();
       visible.disconnect();
     };
   }, [tryPlay]);
 
-  // Once the source is attached, start straight away if the frame is already in view.
   useEffect(() => {
     const v = ref.current;
-    if (!near || !v) return;
+    if (!v) return;
+    if (!near) {
+      // Source released: remember the position, then load() with no source,
+      // which aborts the in-flight download and frees the buffer.
+      if (v.currentTime > 0) resumeAt.current = v.currentTime;
+      if (v.networkState !== v.NETWORK_EMPTY) v.load();
+      return;
+    }
+    // Once the source is attached, start straight away if the frame is already in view.
     v.muted = true;
     if (autoplay && inView.current && !userPaused.current) tryPlay();
   }, [near, autoplay, tryPlay]);
@@ -138,6 +166,12 @@ export function HomeFilm({ video, title = "Timeless Knot wedding film" }: Props)
   // Without autoplay and without a poster, show the first frame instead of a blank frame.
   const stream = homeVideoStreamUrl(video);
   const src = near ? (autoplay || video.poster ? stream : `${stream}#t=0.1`) : undefined;
+  // Buffer ahead only while the film is on screen and playing or about to autoplay.
+  const preloadMode = !near
+    ? "none"
+    : onScreen && (playing || (autoplay && !pausedByUser && !blocked))
+      ? "auto"
+      : "metadata";
   const waiting = !playing && (autoplay === false || blocked || pausedByUser);
 
   return (
@@ -160,8 +194,14 @@ export function HomeFilm({ video, title = "Timeless Knot wedding film" }: Props)
           muted
           loop
           playsInline
-          preload={near ? (autoplay ? "auto" : "metadata") : "none"}
+          preload={preloadMode}
           aria-label={title}
+          onLoadedMetadata={(e) => {
+            if (resumeAt.current > 0) {
+              e.currentTarget.currentTime = resumeAt.current;
+              resumeAt.current = 0;
+            }
+          }}
           onPlaying={() => {
             setPlaying(true);
             setShown(true);

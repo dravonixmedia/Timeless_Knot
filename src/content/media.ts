@@ -48,6 +48,8 @@ export type HomeVideo = {
   duration: number;
   hasAudio: boolean;
   bytes: number;
+  /** Content fingerprint of the MP4: the stream URL carries it, so it can be cached as immutable. */
+  hash?: string;
   poster?: ManifestImage;
 };
 

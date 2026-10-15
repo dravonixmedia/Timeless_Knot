@@ -12,10 +12,20 @@ export type ManifestImage = {
   height: number;
   alt: string;
   focal?: string;
+  /** Content fingerprint (see scripts/media/generate-image-manifest.mjs). */
+  hash?: string;
 };
 
+/**
+ * The URL the site uses for a photograph: its content-addressed copy under
+ * /media-cache/<hash>/ when fingerprinted, so it can be cached as immutable and
+ * a replaced photograph automatically gets a new URL.
+ */
+export const fingerprintedSrc = (img: Pick<ManifestImage, "src" | "hash">) =>
+  img.hash ? `/media-cache/${img.hash}/${img.src.split("/").pop()}` : img.src;
+
 export const toMedia = (img: ManifestImage): Media => ({
-  src: img.src,
+  src: fingerprintedSrc(img),
   alt: img.alt,
   width: img.width,
   height: img.height,

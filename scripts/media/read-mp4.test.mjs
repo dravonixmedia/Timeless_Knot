@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readMp4 } from "./read-mp4.mjs";
-import { generateManifest } from "./generate-image-manifest.mjs";
+import { generateManifest, contentHash } from "./generate-image-manifest.mjs";
 
 const FIX = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures");
 
@@ -98,6 +98,7 @@ test("the first valid MP4 by name is the homepage video; others are withheld", a
     duration: 30,
     hasAudio: false,
     bytes: mp4({ audio: false }).length,
+    hash: contentHash(mp4({ audio: false })),
   });
   assert.ok(s.ignored.includes("/media/home/video/02-wedding-film.mp4"), "the unused video is not uploaded");
   assert.ok(!s.ignored.some((l) => l.includes("Showreel")), "the chosen video is uploaded");
