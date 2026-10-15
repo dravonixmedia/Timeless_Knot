@@ -29,27 +29,32 @@ export const orientationOf = (m: { width: number; height: number }): Orientation
 };
 export const fits = (want: Orientation, got: Orientation) => want === got || got === "square" || want === "square";
 
-/** Assigns photographs to slots, matching orientation first, in order. Pure. */
-export function assignSlots<K extends string>(images: ManifestImage[], slots: Record<K, Media>): Record<K, Media> {
+export type SlotFill<K extends string> = {
+  /** Slots that received a photograph. Slots left out have none and are not rendered. */
+  slots: Partial<Record<K, Media>>;
+  /** Photographs beyond the available slots, in folder order. */
+  extra: Media[];
+};
+
+/**
+ * Assigns photographs to slots, matching each slot's preferred orientation
+ * first and then taking whatever remains, in order. Pure.
+ */
+export function assignSlots<K extends string>(images: ManifestImage[], slots: Record<K, Orientation>): SlotFill<K> {
   const pool = [...images];
-  const out = { ...slots };
+  const out: Partial<Record<K, Media>> = {};
   const keys = Object.keys(slots) as K[];
 
   // Pass 1: orientation matches.
-  const assigned = new Set<K>();
   for (const key of keys) {
-    const want = orientationOf(slots[key]);
-    const index = pool.findIndex((img) => fits(want, orientationOf(img)));
-    if (index !== -1) {
-      out[key] = toMedia(pool.splice(index, 1)[0]);
-      assigned.add(key);
-    }
+    const index = pool.findIndex((img) => fits(slots[key], orientationOf(img)));
+    if (index !== -1) out[key] = toMedia(pool.splice(index, 1)[0]);
   }
   // Pass 2: anything left, in order.
   for (const key of keys) {
-    if (!assigned.has(key) && pool.length) out[key] = toMedia(pool.shift()!);
+    if (!out[key] && pool.length) out[key] = toMedia(pool.shift()!);
   }
-  return out;
+  return { slots: out, extra: pool.map(toMedia) };
 }
 
 /**

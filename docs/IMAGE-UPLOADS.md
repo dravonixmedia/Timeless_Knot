@@ -80,10 +80,17 @@ prefers a photograph of the right shape:
 | `contact` | Portrait |
 
 A portrait goes to the next portrait position and a landscape to the next
-landscape position. Positions without a photograph keep their elegant
-placeholder, so a half-filled folder never breaks the layout. **Extra images
-beyond the number of positions are uploaded but not shown** — put additional
-portfolio photographs in a category gallery folder instead.
+landscape position; if no photograph of the right shape is left, the next one
+is used anyway — always uncropped, at its own proportions (full-width banners
+excepted). **Positions without a photograph are simply left out** — the page
+never shows an empty frame or "photograph to come" placeholder.
+
+**Extra images beyond the number of positions:**
+
+- `about/` and `experience/` — shown in an uncropped editorial sequence lower on
+  the page (portraits in pairs and trios, landscapes full width).
+- `home/hero`, `home/featured`, `contact/` — uploaded but not shown. Put
+  additional portfolio photographs in a category gallery folder instead.
 
 ### Individual stories (subfolders of `weddings/`, `pre-wedding/`, `couples/`)
 
@@ -108,9 +115,10 @@ public/media/weddings/anika-and-rohan/
   deployment. Removed images disappear.
 - Stories appear on the Wedding Stories page (with a filter by type) and,
   if `featured`, on the home page. Pre-wedding and couple stories use the same
-  pages and layouts.
-- While no real story is published, the site shows its clearly labelled
-  demonstration stories. They disappear as soon as the first real story is live.
+  pages and layouts. Story covers are shown uncropped.
+- While no story is published, the Stories list and its filters are hidden
+  (the Portfolio stays visible), and the home page shows one photograph from each
+  portfolio category instead of featured stories.
 
 ## `story.json`
 

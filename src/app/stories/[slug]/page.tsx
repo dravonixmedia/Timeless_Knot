@@ -8,13 +8,12 @@ import { Picture } from "@/components/media/Picture";
 import { Parallax } from "@/components/motion/Parallax";
 import { FilmPlayer } from "@/components/film/FilmPlayer";
 import { Gallery } from "@/components/stories/Gallery";
-import { DemoBadge } from "@/components/stories/StoryCard";
 import { Invitation } from "@/components/sections/Invitation";
 import { Arrow } from "@/components/ui/Links";
 import { Eyebrow, Lines, reveal } from "@/components/ui/Typography";
 import { breadcrumbSchema, JsonLd, pageMetadata, storySchema } from "@/lib/seo";
 
-// Only the stories in the dataset exist; any other slug is a 404.
+// Only published stories exist; any other slug is a 404.
 export const dynamicParams = false;
 
 export function generateStaticParams() {
@@ -29,7 +28,6 @@ export async function generateMetadata({ params }: PageProps<"/stories/[slug]">)
     title: story.seo?.title ?? (story.couple ? `${story.couple} — ${story.title}` : story.title),
     description: story.seo?.description ?? story.excerpt,
     path: `/stories/${story.slug}`,
-    noindex: story.isDemo,
   });
 }
 
@@ -42,12 +40,13 @@ export default async function StoryPage({ params }: PageProps<"/stories/[slug]">
   if (!story) notFound();
 
   const next = getNextStory(story.slug);
+  const film = story.film?.src || story.film?.embedUrl ? story.film : undefined;
   const details = [
     story.couple && { term: "Couple", value: story.couple },
     story.location && { term: "Location", value: story.location },
     story.date && { term: "Date", value: formatDate(story.date) },
     { term: "Story", value: story.category },
-    story.film && { term: "Film", value: story.film.src || story.film.embedUrl ? "Included" : "To be added" },
+    film && { term: "Film", value: "Included" },
   ].filter(Boolean) as { term: string; value: string }[];
 
   return (
@@ -66,7 +65,7 @@ export default async function StoryPage({ params }: PageProps<"/stories/[slug]">
         <Parallax amount={12} className="absolute inset-0 -z-10">
           <ViewTransition name={`story-${story.slug}`} share="morph" default="none">
             <div className="intro-media absolute inset-0">
-              <Picture media={story.cover} layout="fill" sizes="100vw" priority caption="none" />
+              <Picture media={story.cover} layout="fill" sizes="100vw" priority />
             </div>
           </ViewTransition>
         </Parallax>
@@ -96,11 +95,6 @@ export default async function StoryPage({ params }: PageProps<"/stories/[slug]">
               {story.couple}
             </p>
           )}
-          {story.isDemo && (
-            <div className="intro-fade mt-8" style={{ ["--delay" as string]: "1s" }}>
-              <DemoBadge tone="light" />
-            </div>
-          )}
         </div>
       </section>
 
@@ -117,13 +111,6 @@ export default async function StoryPage({ params }: PageProps<"/stories/[slug]">
           </dl>
 
           <div className="col-span-12 lg:col-span-7 lg:col-start-5">
-            {story.isDemo && (
-              <p className="mb-12 border-l border-olive/50 pl-5 text-[0.9rem] text-muted" {...reveal("fade")}>
-                <strong className="font-medium text-charcoal">Demonstration story.</strong> This feature shows how a
-                Timeless Knot wedding will be presented. Its photographs, words and details will be replaced by a real
-                celebration shared by the studio.
-              </p>
-            )}
             {story.introduction.map((paragraph, i) => (
               <p
                 key={i}
@@ -146,8 +133,8 @@ export default async function StoryPage({ params }: PageProps<"/stories/[slug]">
         <Gallery blocks={story.gallery} />
       </section>
 
-      {/* 8. Optional wedding film */}
-      {story.film && (
+      {/* 8. Optional wedding film — only when it is playable */}
+      {film && (
         <section aria-labelledby="film-title" className="bg-forest text-ivory section-y">
           <div className="frame">
             <div className="mb-14 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
@@ -159,7 +146,7 @@ export default async function StoryPage({ params }: PageProps<"/stories/[slug]">
               </div>
             </div>
             <div {...reveal("mask")}>
-              <FilmPlayer film={story.film} fallbackPoster={story.film.poster} />
+              <FilmPlayer film={film} />
             </div>
           </div>
         </section>
@@ -190,7 +177,7 @@ export default async function StoryPage({ params }: PageProps<"/stories/[slug]">
               </div>
               <div className="col-span-12 lg:col-span-6 lg:col-start-7" {...reveal("mask")}>
                 <ViewTransition name={`story-${next.slug}`} share="morph" default="none">
-                  <Picture media={next.cover} aspect="16 / 10" sizes="(min-width: 1024px) 50vw, 100vw" imageClassName="zoom-media" caption="tag" />
+                  <Picture media={next.cover} sizes="(min-width: 1024px) 50vw, 100vw" imageClassName="zoom-media" />
                 </ViewTransition>
               </div>
             </div>

@@ -7,22 +7,19 @@ import { ArrowLink } from "@/components/ui/Links";
 
 /** Rhythm of art-directed placements, repeated through the archive. */
 const placements = [
-  { className: "col-span-12 lg:col-span-7", aspect: "3 / 2", size: "lg", sizes: "(min-width: 1024px) 58vw, 100vw" },
+  { className: "col-span-12 lg:col-span-7", size: "lg", sizes: "(min-width: 1024px) 58vw, 100vw" },
   {
     className: "col-span-10 col-start-3 sm:col-span-6 sm:col-start-7 lg:col-span-4 lg:col-start-9 lg:mt-40",
-    aspect: "4 / 5",
     size: "md",
     sizes: "(min-width: 1024px) 32vw, (min-width: 640px) 50vw, 84vw",
   },
   {
     className: "col-span-11 sm:col-span-7 lg:col-span-5 lg:col-start-2",
-    aspect: "4 / 5",
     size: "md",
     sizes: "(min-width: 1024px) 40vw, (min-width: 640px) 58vw, 92vw",
   },
   {
     className: "col-span-12 sm:col-span-10 sm:col-start-3 lg:col-span-5 lg:col-start-8 lg:mt-56",
-    aspect: "5 / 4",
     size: "md",
     sizes: "(min-width: 1024px) 40vw, (min-width: 640px) 84vw, 100vw",
   },
@@ -78,7 +75,6 @@ export function StoriesArchive({ stories, categories }: { stories: WeddingStory[
                 story={story}
                 index={i}
                 className={place.className}
-                aspect={place.aspect}
                 size={place.size}
                 sizes={place.sizes}
               />
@@ -90,7 +86,7 @@ export function StoriesArchive({ stories, categories }: { stories: WeddingStory[
   );
 }
 
-function EmptyArchive({ filtered = false }: { filtered?: boolean }) {
+export function EmptyArchive({ filtered = false }: { filtered?: boolean }) {
   return (
     <div className="mx-auto max-w-xl py-24 text-center">
       <p className="display-sm italic">{filtered ? "No stories in this collection yet." : "New stories are being curated."}</p>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getStories, getStoryCategories } from "@/content/stories";
 import { Page } from "@/components/layout/Page";
-import { StoriesArchive } from "@/components/stories/StoriesArchive";
+import { EmptyArchive, StoriesArchive } from "@/components/stories/StoriesArchive";
 import { PortfolioGallery } from "@/components/stories/PortfolioGallery";
 import { getCategoryGalleries } from "@/content/media";
 import { Invitation } from "@/components/sections/Invitation";
@@ -17,8 +17,9 @@ export const metadata: Metadata = pageMetadata({
 
 export default function StoriesPage() {
   const stories = getStories();
-  const hasDemo = stories.some((story) => story.isDemo);
   const galleries = getCategoryGalleries();
+  const hasPortfolio = galleries.length > 0;
+  const hasStories = stories.length > 0;
 
   return (
     <Page>
@@ -42,16 +43,10 @@ export default function StoriesPage() {
               <p className="lede intro-fade text-muted" style={{ ["--delay" as string]: "0.8s" }}>
                 Each story is its own world — its people, its traditions, its light. Step inside.
               </p>
-              {hasDemo && (
-                <p className="intro-fade mt-6 border-l border-olive/50 pl-4 text-[0.85rem] text-muted" style={{ ["--delay" as string]: "1s" }}>
-                  The stories currently shown are demonstrations of the layout. Real Timeless Knot weddings will replace
-                  them as they are published.
-                </p>
-              )}
             </div>
           </div>
 
-          {galleries.length > 0 && (
+          {hasPortfolio && (
             <section aria-labelledby="portfolio-title" className="pb-[var(--section-tight)]">
               <div {...reveal("fade")}>
                 <Eyebrow className="text-muted">Portfolio</Eyebrow>
@@ -65,12 +60,19 @@ export default function StoriesPage() {
             </section>
           )}
 
-          {galleries.length > 0 && (
-            <div className="mb-10" {...reveal("fade")}>
-              <Eyebrow className="text-muted">Stories</Eyebrow>
-            </div>
+          {/* Published stories only; without any, the archive and its filters are left out. */}
+          {hasStories && (
+            <section aria-labelledby="archive-title">
+              <div className="mb-10" {...reveal("fade")}>
+                <Eyebrow className="text-muted">Stories</Eyebrow>
+              </div>
+              <h2 id="archive-title" className="sr-only">
+                Stories
+              </h2>
+              <StoriesArchive stories={stories} categories={getStoryCategories()} />
+            </section>
           )}
-          <StoriesArchive stories={stories} categories={getStoryCategories()} />
+          {!hasPortfolio && !hasStories && <EmptyArchive />}
         </div>
       </section>
 

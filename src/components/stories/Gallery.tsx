@@ -83,7 +83,7 @@ function GalleryItem({ block }: { block: GalleryBlock }) {
               className={i === 0 ? "col-span-2 lg:col-span-1" : i === 1 ? "lg:mt-20" : ""}
               {...reveal("mask", i * 0.12)}
             >
-              <Picture media={image} sizes="(min-width: 1024px) 30vw, (min-width: 640px) 50vw, 100vw" caption="tag" />
+              <Picture media={image} sizes="(min-width: 1024px) 30vw, (min-width: 640px) 50vw, 100vw" />
             </figure>
           ))}
         </div>

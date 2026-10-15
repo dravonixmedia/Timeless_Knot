@@ -21,12 +21,16 @@ export function Invitation({
   return (
     <section aria-labelledby="invitation-title" className="relative overflow-hidden bg-porcelain section-y">
       <div className="frame relative">
-        <div className="pointer-events-none absolute left-[var(--gutter)] top-0 hidden w-[15%] max-w-56 lg:block" {...reveal("mask")}>
-          <Picture media={imagery.invitationLeft} sizes="15vw" caption="tag" />
-        </div>
-        <div className="pointer-events-none absolute bottom-0 right-[var(--gutter)] hidden w-[19%] max-w-72 lg:block" {...reveal("mask", 0.2)}>
-          <Picture media={imagery.invitationRight} sizes="19vw" caption="tag" />
-        </div>
+        {imagery.invitationLeft && (
+          <div className="pointer-events-none absolute left-[var(--gutter)] top-0 hidden w-[15%] max-w-56 lg:block" {...reveal("mask")}>
+            <Picture media={imagery.invitationLeft} sizes="15vw" />
+          </div>
+        )}
+        {imagery.invitationRight && (
+          <div className="pointer-events-none absolute bottom-0 right-[var(--gutter)] hidden w-[19%] max-w-72 lg:block" {...reveal("mask", 0.2)}>
+            <Picture media={imagery.invitationRight} sizes="19vw" />
+          </div>
+        )}
 
         <div className="relative mx-auto flex max-w-3xl flex-col items-center py-6 text-center lg:py-20">
           <div {...reveal("fade")}>

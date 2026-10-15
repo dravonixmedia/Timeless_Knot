@@ -8,8 +8,6 @@ type Props = {
   story: WeddingStory;
   index: number;
   sizes: string;
-  /** Art-directed crop for this placement, e.g. "3 / 2" or "4 / 5". */
-  aspect?: string;
   size?: "lg" | "md" | "sm";
   className?: string;
 };
@@ -20,7 +18,7 @@ const titleSize = {
   sm: "text-[clamp(1.5rem,1.25rem+0.8vw,2rem)]",
 };
 
-export function StoryCard({ story, index, sizes, aspect, size = "md", className = "" }: Props) {
+export function StoryCard({ story, index, sizes, size = "md", className = "" }: Props) {
   const meta = [story.category, story.location].filter(Boolean).join(" · ");
 
   return (
@@ -28,7 +26,7 @@ export function StoryCard({ story, index, sizes, aspect, size = "md", className 
       <Link href={`/stories/${story.slug}`} prefetch={true} className="group block">
         <div {...reveal("mask")}>
           <ViewTransition name={`story-${story.slug}`} share="morph" default="none">
-            <Picture media={story.cover} sizes={sizes} aspect={aspect} imageClassName="zoom-media" caption="tag" />
+            <Picture media={story.cover} sizes={sizes} imageClassName="zoom-media" />
           </ViewTransition>
         </div>
 
@@ -42,22 +40,9 @@ export function StoryCard({ story, index, sizes, aspect, size = "md", className 
             </h3>
             {story.couple && <p className="mt-2 font-serif text-lg italic text-muted">{story.couple}</p>}
             <p className="meta mt-3 text-[0.62rem] text-muted">{meta}</p>
-            {story.isDemo && <DemoBadge className="mt-4" />}
           </div>
         </div>
       </Link>
     </article>
-  );
-}
-
-export function DemoBadge({ className = "", tone = "dark" }: { className?: string; tone?: "dark" | "light" }) {
-  return (
-    <p
-      className={`meta inline-flex items-center gap-2 border px-2.5 py-1 text-[0.56rem] tracking-[0.2em] ${
-        tone === "light" ? "border-ivory/40 text-ivory/90" : "border-charcoal/25 text-muted"
-      } ${className}`}
-    >
-      Demonstration story
-    </p>
   );
 }

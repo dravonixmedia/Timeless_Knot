@@ -283,6 +283,10 @@ test("alt text from filenames ignores camera names and ordering prefixes", () =>
   assert.equal(describeFromFilename("wed 01.jpg"), null);
   assert.equal(describeFromFilename("cou 03.jpg"), null);
   assert.equal(describeFromFilename("ceremony.jpg"), "Ceremony");
+  // Hashes, dates and version tags never become alt text.
+  assert.equal(describeFromFilename("66d304c1a5952aaeb3b9d594152b2fae.jpg"), null);
+  assert.equal(describeFromFilename("15 10 02.jpg"), null);
+  assert.equal(describeFromFilename("first-look-v2.jpg"), "First look");
 });
 
 test("metadata validation explains every problem", () => {

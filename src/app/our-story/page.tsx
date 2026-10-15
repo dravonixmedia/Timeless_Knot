@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { imagery } from "@/content/imagery";
+import { extraImagery, imagery } from "@/content/imagery";
+import { composeGallery } from "@/lib/compose-gallery";
 import { Page } from "@/components/layout/Page";
 import { Picture } from "@/components/media/Picture";
 import { Parallax } from "@/components/motion/Parallax";
+import { Gallery } from "@/components/stories/Gallery";
 import { Invitation } from "@/components/sections/Invitation";
 import { Eyebrow, Lines, reveal } from "@/components/ui/Typography";
 import { pageMetadata } from "@/lib/seo";
@@ -37,12 +39,16 @@ const principles = [
 ];
 
 export default function OurStoryPage() {
+  const { storyHero, storyVision, storyPairA, storyPairB } = imagery;
+  const pair = [storyPairA, storyPairB].filter((media) => media !== undefined);
+  const more = composeGallery(extraImagery.about);
+
   return (
     <Page>
       {/* Hero */}
       <section aria-labelledby="our-story-title" className="bg-porcelain pt-[calc(var(--header-h)+clamp(3rem,9vw,8rem))]">
         <div className="frame editorial-grid items-end gap-y-14 pb-[var(--section-tight)]">
-          <div className="col-span-12 lg:col-span-8">
+          <div className={`col-span-12 ${storyHero ? "lg:col-span-8" : "lg:col-span-10"}`}>
             <p className="eyebrow intro-fade mb-10 flex items-center gap-4 text-muted" style={{ ["--delay" as string]: "0.1s" }}>
               <span aria-hidden="true" className="h-px w-8 bg-current opacity-50" />
               Our Story
@@ -58,11 +64,13 @@ export default function OurStoryPage() {
               Every wedding is a deeply personal story. Ours is the privilege of telling it well.
             </p>
           </div>
-          <div className="col-span-10 col-start-3 sm:col-span-6 sm:col-start-7 lg:col-span-4 lg:col-start-9">
-            <div className="intro-fade" style={{ ["--delay" as string]: "0.5s" }}>
-              <Picture media={imagery.storyHero} priority sizes="(min-width: 1024px) 32vw, (min-width: 640px) 50vw, 84vw" />
+          {storyHero && (
+            <div className="col-span-10 col-start-3 sm:col-span-6 sm:col-start-7 lg:col-span-4 lg:col-start-9">
+              <div className="intro-fade" style={{ ["--delay" as string]: "0.5s" }}>
+                <Picture media={storyHero} priority sizes="(min-width: 1024px) 32vw, (min-width: 640px) 50vw, 84vw" />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
@@ -92,9 +100,11 @@ export default function OurStoryPage() {
 
       {/* Vision */}
       <section aria-labelledby="vision-title" className="relative bg-forest text-ivory">
-        <Parallax amount={14} className="h-[62svh] min-h-[22rem]">
-          <Picture media={imagery.storyVision} layout="fill" sizes="100vw" caption="tag" />
-        </Parallax>
+        {storyVision && (
+          <Parallax amount={14} className="h-[62svh] min-h-[22rem]">
+            <Picture media={storyVision} layout="fill" sizes="100vw" />
+          </Parallax>
+        )}
         <div className="frame editorial-grid gap-y-10 section-y">
           <div className="col-span-12 lg:col-span-4">
             <div {...reveal("fade")}>
@@ -124,13 +134,21 @@ export default function OurStoryPage() {
       {/* Artistic philosophy */}
       <section aria-labelledby="philosophy-title" className="bg-porcelain section-y">
         <div className="frame editorial-grid gap-y-16">
-          <div className="col-span-7 sm:col-span-5 lg:col-span-4" {...reveal("mask")}>
-            <Picture media={imagery.storyPairA} sizes="(min-width: 1024px) 30vw, 55vw" caption="tag" />
-          </div>
-          <div className="col-span-7 col-start-6 -mt-28 sm:col-span-5 sm:col-start-7 sm:mt-40 lg:col-span-3 lg:col-start-6 lg:mt-64" {...reveal("mask", 0.15)}>
-            <Picture media={imagery.storyPairB} sizes="(min-width: 1024px) 24vw, 55vw" caption="tag" />
-          </div>
-          <div className="col-span-12 self-center lg:col-span-4 lg:col-start-9">
+          {pair[0] && (
+            <div className="col-span-7 sm:col-span-5 lg:col-span-4" {...reveal("mask")}>
+              <Picture media={pair[0]} sizes="(min-width: 1024px) 30vw, 55vw" />
+            </div>
+          )}
+          {pair[1] && (
+            <div className="col-span-7 col-start-6 -mt-28 sm:col-span-5 sm:col-start-7 sm:mt-40 lg:col-span-3 lg:col-start-6 lg:mt-64" {...reveal("mask", 0.15)}>
+              <Picture media={pair[1]} sizes="(min-width: 1024px) 24vw, 55vw" />
+            </div>
+          )}
+          <div
+            className={`col-span-12 self-center ${
+              pair.length === 2 ? "lg:col-span-4 lg:col-start-9" : pair.length === 1 ? "lg:col-span-6 lg:col-start-7" : "lg:col-span-8 lg:col-start-3"
+            }`}
+          >
             <div {...reveal("fade")}>
               <Eyebrow className="text-muted">Artistic Philosophy</Eyebrow>
             </div>
@@ -143,6 +161,13 @@ export default function OurStoryPage() {
           </div>
         </div>
       </section>
+
+      {/* Further photographs uploaded to about/ beyond the slots above */}
+      {more.length > 0 && (
+        <section aria-label="Photographs" className="bg-porcelain pb-[var(--section)]">
+          <Gallery blocks={more} />
+        </section>
+      )}
 
       {/* Approach to storytelling */}
       <section aria-labelledby="approach-title" className="bg-pale-sage section-y">
