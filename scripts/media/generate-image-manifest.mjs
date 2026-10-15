@@ -85,7 +85,9 @@ export function describeFromFilename(file) {
     .replace(/\s+/g, " ")
     .trim()
     .split(" ")
-    .filter((w) => !/^\d+$/.test(w) && !/^(final|edit|edited|web|copy|v\d+|hi?res|lowres|export)$/i.test(w));
+    // Tokens containing digits are numbers, dates, versions or hashes
+    // ("66d304c1a5952aae…") — never descriptive words.
+    .filter((w) => !/\d/.test(w) && !/^(final|edit|edited|web|copy|hi?res|lowres|export)$/i.test(w));
   if (!words.some((w) => /[a-z]{3,}/i.test(w))) return null;
   const text = words.join(" ").toLowerCase();
   if (GENERIC_NAMES.has(text)) return null;

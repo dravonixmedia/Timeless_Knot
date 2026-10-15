@@ -5,12 +5,9 @@
  * later supply the same shapes without any redesign of the components.
  */
 
-/** Tonal treatment used while a photograph has not yet been supplied. */
-export type PlateTone = "forest" | "sage" | "pale" | "charcoal" | "porcelain";
-
 export type Media = {
-  /** Path inside /public or an allowed remote URL. Omit until the real photograph exists. */
-  src?: string;
+  /** Path inside /public or an allowed remote URL. Every Media is a real photograph. */
+  src: string;
   /** Descriptive alt text based on verified content. */
   alt: string;
   /** Intrinsic dimensions — used to preserve the original aspect ratio. */
@@ -18,9 +15,6 @@ export type Media = {
   height: number;
   /** CSS object-position for art-directed crops, e.g. "50% 30%". */
   focal?: string;
-  /** Art-direction note shown on the placeholder plate until `src` is provided. */
-  brief?: string;
-  tone?: PlateTone;
 };
 
 export type Film = {
@@ -63,9 +57,4 @@ export type WeddingStory = {
   gallery: GalleryBlock[];
   film?: Film;
   seo?: { title?: string; description?: string };
-  /**
-   * Demonstration content used until the client supplies real weddings.
-   * Demo stories are visibly labelled, excluded from the sitemap and set to noindex.
-   */
-  isDemo?: boolean;
 };

@@ -89,12 +89,12 @@ src/
   config/site.ts          confirmed business facts (name, tagline, contact, socials, logo, nav)
   content/
     types.ts              CMS-ready content model (WeddingStory, Media, Film, GalleryBlock)
-    stories.ts            wedding stories (currently DEMONSTRATION entries only)
-    imagery.ts            site-wide photography slots + optional showreel
+    stories.ts            published wedding stories (from story.json folders)
+    imagery.ts            site-wide photography slots, extra photographs + optional showreel
   components/
     brand/                logo (provisional wordmark), botanical illustration
     layout/               header, mobile menu, footer, page transition wrapper
-    media/Picture.tsx     next/image, or an honest "photograph to come" plate until `src` is set
+    media/Picture.tsx     next/image wrapper (real photographs only — empty slots are not rendered)
     motion/               shared reveal observer, Lenis + ScrollTrigger sync, parallax
     stories/              story card, archive with filters, art-directed gallery
     film/FilmPlayer.tsx   click-to-load accessible video / embed player
@@ -112,10 +112,11 @@ folders, `story.json` fields and image guidelines.
 - `npm run media` regenerates the image manifest (also runs in `build`, `dev` and after install).
 - `npm run media:check` fails on any content problem — useful before merging uploads.
 - `npm test` runs the manifest and gallery-composition tests.
-- Demonstration stories show only until the first real story is published.
+- Image positions without a photograph are left out of the page; there are no placeholder images or demo stories.
 
 **Films:** set `film.src` (self-hosted MP4/WebM) or `film.embedUrl` (YouTube-nocookie / Vimeo) with a
-real poster. Set `showreel` in `content/imagery.ts` to feature one on the home page.
+real poster. Set `showreel` in `content/imagery.ts` to feature one on the home page. The home film section
+is hidden until a playable film exists.
 
 **Logo:** set `site.logo` to the official SVG/PNG files (light and dark versions); the provisional
 typographic wordmark is then replaced everywhere. Replace `src/app/icon.svg` with the official mark.

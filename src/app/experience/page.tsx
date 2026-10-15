@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { imagery } from "@/content/imagery";
+import { extraImagery, imagery } from "@/content/imagery";
+import { composeGallery } from "@/lib/compose-gallery";
 import { Page } from "@/components/layout/Page";
 import { Picture } from "@/components/media/Picture";
 import { Parallax } from "@/components/motion/Parallax";
+import { Gallery } from "@/components/stories/Gallery";
 import { Invitation } from "@/components/sections/Invitation";
 import { Eyebrow, Lines, reveal } from "@/components/ui/Typography";
 import { pageMetadata } from "@/lib/seo";
@@ -46,6 +48,9 @@ const stages = [
 ];
 
 export default function ExperiencePage() {
+  const { experienceHero, experienceDetail } = imagery;
+  const more = composeGallery(extraImagery.experience);
+
   return (
     <Page>
       {/* Hero */}
@@ -69,11 +74,13 @@ export default function ExperiencePage() {
             </p>
           </div>
         </div>
-        <div className="intro-fade" style={{ ["--delay" as string]: "0.6s" }}>
-          <Parallax amount={12} className="h-[70svh] min-h-[22rem]">
-            <Picture media={imagery.experienceHero} layout="fill" sizes="100vw" priority caption="tag" />
-          </Parallax>
-        </div>
+        {experienceHero && (
+          <div className="intro-fade" style={{ ["--delay" as string]: "0.6s" }}>
+            <Parallax amount={12} className="h-[70svh] min-h-[22rem]">
+              <Picture media={experienceHero} layout="fill" sizes="100vw" priority />
+            </Parallax>
+          </div>
+        )}
       </section>
 
       {/* Journey */}
@@ -116,10 +123,12 @@ export default function ExperiencePage() {
       {/* Editorial pairing */}
       <section aria-labelledby="keep-title" className="bg-pale-sage section-y">
         <div className="frame editorial-grid items-center gap-y-14">
-          <div className="col-span-10 sm:col-span-6 lg:col-span-4 lg:col-start-2" {...reveal("mask")}>
-            <Picture media={imagery.experienceDetail} sizes="(min-width: 1024px) 32vw, (min-width: 640px) 50vw, 84vw" />
-          </div>
-          <div className="col-span-12 lg:col-span-5 lg:col-start-7">
+          {experienceDetail && (
+            <div className="col-span-10 sm:col-span-6 lg:col-span-4 lg:col-start-2" {...reveal("mask")}>
+              <Picture media={experienceDetail} sizes="(min-width: 1024px) 32vw, (min-width: 640px) 50vw, 84vw" />
+            </div>
+          )}
+          <div className={`col-span-12 ${experienceDetail ? "lg:col-span-5 lg:col-start-7" : "lg:col-span-8 lg:col-start-3"}`}>
             <Lines id="keep-title" className="display-lg" lines={["Made to Be", "Returned To,", <em key="a">Again and Again.</em>]} />
             <p className="body-lg mt-10 max-w-[44ch] text-muted" {...reveal("up", 0.15)}>
               The day passes quickly. What remains is how it felt — and a story you can step back into whenever you
@@ -128,6 +137,13 @@ export default function ExperiencePage() {
           </div>
         </div>
       </section>
+
+      {/* Further photographs uploaded to experience/ beyond the slots above */}
+      {more.length > 0 && (
+        <section aria-label="Photographs" className="bg-pale-sage pb-[var(--section)]">
+          <Gallery blocks={more} />
+        </section>
+      )}
 
       <Invitation />
     </Page>

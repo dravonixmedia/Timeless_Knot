@@ -1,5 +1,5 @@
 import type { Media, StoryCategory, WeddingStory } from "./types";
-import { assignSlots, composeGallery, toMedia, type ManifestImage } from "@/lib/compose-gallery";
+import { assignSlots, composeGallery, toMedia, type ManifestImage, type Orientation, type SlotFill } from "@/lib/compose-gallery";
 import manifestJson from "./generated/media-manifest.json";
 
 /**
@@ -48,14 +48,14 @@ export type MediaManifest = {
 export const manifest = manifestJson as MediaManifest;
 
 /**
- * Fills placeholder slots with the photographs in a collection.
+ * Fills a page's photograph slots from a collection.
  *
- * Images are taken in folder order; each slot prefers the next image whose
- * orientation matches the slot's art direction (portrait / landscape), and
- * only then accepts any remaining image. Slots with no photograph keep their
- * placeholder plate, so a half-filled folder never breaks a layout.
+ * Images are taken in folder order; each slot prefers the next image matching
+ * its orientation, and only then accepts any remaining image. A slot without a
+ * photograph is simply absent, so the page leaves that image block out — no
+ * placeholder is ever shown. Photographs beyond the slots come back as `extra`.
  */
-export function fillSlots<K extends string>(collection: SiteCollection, slots: Record<K, Media>): Record<K, Media> {
+export function fillSlots<K extends string>(collection: SiteCollection, slots: Record<K, Orientation>): SlotFill<K> {
   return assignSlots(manifest.collections[collection] ?? [], slots);
 }
 

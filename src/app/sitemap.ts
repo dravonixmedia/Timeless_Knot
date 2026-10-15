@@ -9,14 +9,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: path === "/" ? 1 : 0.8,
   }));
 
-  // Demonstration stories are never submitted for indexing.
-  const stories = getStories()
-    .filter((story) => !story.isDemo)
-    .map((story) => ({
-      url: absoluteUrl(`/stories/${story.slug}`),
-      changeFrequency: "yearly" as const,
-      priority: 0.7,
-    }));
+  const stories = getStories().map((story) => ({
+    url: absoluteUrl(`/stories/${story.slug}`),
+    changeFrequency: "yearly" as const,
+    priority: 0.7,
+  }));
 
   return [...pages, ...stories];
 }

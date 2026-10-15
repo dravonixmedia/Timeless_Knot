@@ -1,5 +1,5 @@
 import { imagery, showreel } from "@/content/imagery";
-import type { Media } from "@/content/types";
+import { getCategoryGalleries } from "@/content/media";
 import { getFeaturedStories, getShowcaseFilm } from "@/content/stories";
 import { Page } from "@/components/layout/Page";
 import { Picture } from "@/components/media/Picture";
@@ -17,6 +17,7 @@ export default function HomePage() {
       <Hero />
       <ArtOfRemembering />
       <FeaturedStories />
+      <PortfolioHighlights />
       <Philosophy />
       <Films />
       <ExperienceIntro />
@@ -29,24 +30,21 @@ export default function HomePage() {
 /* 01 — Immersive cinematic hero ------------------------------------------ */
 
 function Hero() {
-  const media: Media = imagery.homeHero;
+  const media = imagery.homeHero;
   return (
     <section aria-labelledby="hero-title" className="relative isolate h-[100svh] min-h-[38rem] overflow-hidden bg-forest text-ivory">
-      <Parallax amount={14} className="absolute inset-0 -z-10">
-        <div className="intro-media absolute inset-0">
-          <Picture media={media} layout="fill" sizes="100vw" priority caption="none" />
-        </div>
-      </Parallax>
+      {/* Without a photograph the hero is a plain forest field — never an empty frame. */}
+      {media && (
+        <Parallax amount={14} className="absolute inset-0 -z-10">
+          <div className="intro-media absolute inset-0">
+            <Picture media={media} layout="fill" sizes="100vw" priority />
+          </div>
+        </Parallax>
+      )}
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-10 bg-[linear-gradient(to_top,rgb(41_45_41/0.62),rgb(41_45_41/0.12)_48%,rgb(41_45_41/0.28))]"
       />
-
-      {!media.src && (
-        <p className="meta absolute right-[var(--gutter)] top-[calc(var(--header-h)+1.5rem)] text-[0.58rem] text-ivory/70 intro-fade" style={{ ["--delay" as string]: "1.6s" }}>
-          Hero photograph to come
-        </p>
-      )}
 
       <div className="frame relative flex h-full flex-col justify-end pb-[clamp(2.5rem,7vh,5.5rem)]">
         <div className="editorial-grid items-end gap-y-10">
@@ -95,10 +93,11 @@ function Hero() {
 /* 02 — The art of remembering -------------------------------------------- */
 
 function ArtOfRemembering() {
+  const media = imagery.artOfRemembering;
   return (
     <section aria-labelledby="remember-title" className="section-y bg-porcelain">
       <div className="frame editorial-grid gap-y-16">
-        <div className="col-span-12 lg:col-span-7 lg:pt-28">
+        <div className={`col-span-12 lg:col-span-7 ${media ? "lg:pt-28" : ""}`}>
           <div {...reveal("fade")}>
             <Eyebrow className="text-muted">The Art of Remembering</Eyebrow>
           </div>
@@ -119,18 +118,20 @@ function ArtOfRemembering() {
           </div>
         </div>
 
-        <div className="relative col-span-10 col-start-2 sm:col-span-7 sm:col-start-5 lg:col-span-4 lg:col-start-9">
-          <div {...reveal("mask")}>
-            <Picture media={imagery.artOfRemembering} sizes="(min-width: 1024px) 32vw, (min-width: 640px) 58vw, 84vw" />
+        {media && (
+          <div className="relative col-span-10 col-start-2 sm:col-span-7 sm:col-start-5 lg:col-span-4 lg:col-start-9">
+            <div {...reveal("mask")}>
+              <Picture media={media} sizes="(min-width: 1024px) 32vw, (min-width: 640px) 58vw, 84vw" />
+            </div>
+            <p
+              className="mt-6 flex items-center gap-4 font-serif text-lg italic text-muted lg:absolute lg:-left-44 lg:bottom-20 lg:mt-0 lg:w-40 lg:flex-col lg:items-end lg:text-right"
+              {...reveal("fade", 0.5)}
+            >
+              <span aria-hidden="true" className="h-px w-10 bg-olive/60 lg:order-2" />
+              a moment, kept.
+            </p>
           </div>
-          <p
-            className="mt-6 flex items-center gap-4 font-serif text-lg italic text-muted lg:absolute lg:-left-44 lg:bottom-20 lg:mt-0 lg:w-40 lg:flex-col lg:items-end lg:text-right"
-            {...reveal("fade", 0.5)}
-          >
-            <span aria-hidden="true" className="h-px w-10 bg-olive/60 lg:order-2" />
-            a moment, kept.
-          </p>
-        </div>
+        )}
       </div>
     </section>
   );
@@ -139,16 +140,14 @@ function ArtOfRemembering() {
 /* 03 — Featured stories -------------------------------------------------- */
 
 const featuredLayout = [
-  { className: "col-span-12 lg:col-span-8", aspect: "3 / 2", size: "lg", sizes: "(min-width: 1024px) 64vw, 100vw" },
+  { className: "col-span-12 lg:col-span-8", size: "lg", sizes: "(min-width: 1024px) 64vw, 100vw" },
   {
     className: "col-span-10 col-start-3 sm:col-span-7 sm:col-start-6 lg:col-span-4 lg:col-start-9 lg:mt-56",
-    aspect: "4 / 5",
     size: "md",
     sizes: "(min-width: 1024px) 32vw, (min-width: 640px) 58vw, 84vw",
   },
   {
     className: "col-span-11 sm:col-span-7 lg:col-span-5 lg:col-start-2 lg:-mt-10",
-    aspect: "5 / 4",
     size: "sm",
     sizes: "(min-width: 1024px) 40vw, (min-width: 640px) 58vw, 92vw",
   },
@@ -181,7 +180,6 @@ function FeaturedStories() {
                 story={story}
                 index={i}
                 className={layout.className}
-                aspect={layout.aspect}
                 size={layout.size}
                 sizes={layout.sizes}
               />
@@ -189,6 +187,59 @@ function FeaturedStories() {
           })}
           <div className="col-span-12 flex items-end lg:col-span-4 lg:col-start-9 lg:justify-end" {...reveal("up")}>
             <ButtonLink href="/stories">View all stories</ButtonLink>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* 03b — Portfolio highlights ---------------------------------------------- */
+
+const highlightLayout = [
+  { className: "col-span-12 sm:col-span-6 lg:col-span-4", sizes: "(min-width: 1024px) 32vw, (min-width: 640px) 50vw, 100vw" },
+  { className: "col-span-10 col-start-3 sm:col-span-6 sm:col-start-7 sm:mt-24 lg:col-span-4 lg:col-start-5 lg:mt-40", sizes: "(min-width: 1024px) 32vw, (min-width: 640px) 50vw, 84vw" },
+  { className: "col-span-11 sm:col-span-6 sm:col-start-4 lg:col-span-4 lg:col-start-9 lg:mt-16", sizes: "(min-width: 1024px) 32vw, (min-width: 640px) 50vw, 92vw" },
+] as const;
+
+/**
+ * Until real stories are published, the home page shows the first photograph
+ * of each portfolio category instead — real work, at its original proportions.
+ */
+function PortfolioHighlights() {
+  if (getFeaturedStories(1).length > 0) return null;
+  const picks = getCategoryGalleries()
+    .map((gallery) => ({ title: gallery.title, image: gallery.images[0] }))
+    .slice(0, highlightLayout.length);
+  if (picks.length === 0) return null;
+
+  return (
+    <section aria-labelledby="portfolio-title" className="bg-porcelain pb-[var(--section)]">
+      <div className="frame">
+        <div className="editorial-grid items-end gap-y-8 border-t border-charcoal/12 pt-[var(--section-tight)]">
+          <Lines
+            id="portfolio-title"
+            className="display-lg col-span-12 lg:col-span-7"
+            lines={["Moments Worth", <em key="r">Remembering.</em>]}
+          />
+          <p className="lede col-span-12 italic text-muted sm:col-span-6 lg:col-span-4 lg:col-start-9 lg:pb-3" {...reveal("up", 0.2)}>
+            A collection of love, beautifully lived.
+          </p>
+        </div>
+
+        <div className="editorial-grid mt-16 items-start gap-y-14 lg:mt-24">
+          {picks.map((pick, i) => (
+            <figure key={pick.image.src} className={highlightLayout[i].className}>
+              <div {...reveal("mask", i * 0.1)}>
+                <Picture media={pick.image} sizes={highlightLayout[i].sizes} />
+              </div>
+              <figcaption className="meta mt-5 text-[0.62rem] text-muted" {...reveal("fade", 0.2)}>
+                {pick.title}
+              </figcaption>
+            </figure>
+          ))}
+          <div className="col-span-12 flex lg:justify-end" {...reveal("up")}>
+            <ButtonLink href="/stories">View the portfolio</ButtonLink>
           </div>
         </div>
       </div>
@@ -226,7 +277,9 @@ function Philosophy() {
 /* 05 — Cinematic films --------------------------------------------------- */
 
 function Films() {
+  // Only a real, playable film is shown; until one exists the section is left out.
   const film = showreel ?? getShowcaseFilm();
+  if (!film) return null;
   return (
     <section aria-labelledby="films-title" className="bg-forest text-ivory section-y">
       <div className="frame">
@@ -243,7 +296,7 @@ function Films() {
         </div>
 
         <div className="mt-16 lg:mt-24" {...reveal("mask")}>
-          <FilmPlayer film={film} fallbackPoster={imagery.filmPoster} />
+          <FilmPlayer film={film} />
         </div>
       </div>
     </section>
@@ -316,10 +369,16 @@ function ExperienceIntro() {
 
 function EditorialMoment() {
   return (
-    <section aria-labelledby="moment-title" className="relative isolate h-[92svh] min-h-[32rem] overflow-hidden bg-charcoal text-ivory">
-      <Parallax amount={16} className="absolute inset-0 -z-10">
-        <Picture media={imagery.editorialMoment} layout="fill" sizes="100vw" caption="tag" />
-      </Parallax>
+    <section
+      aria-labelledby="moment-title"
+      className={`relative isolate overflow-hidden bg-charcoal text-ivory ${imagery.editorialMoment ? "h-[92svh] min-h-[32rem]" : "section-y"}`}
+    >
+      {/* Without a photograph this stays a typographic interlude on charcoal. */}
+      {imagery.editorialMoment && (
+        <Parallax amount={16} className="absolute inset-0 -z-10">
+          <Picture media={imagery.editorialMoment} layout="fill" sizes="100vw" />
+        </Parallax>
+      )}
       <div aria-hidden="true" className="absolute inset-0 -z-10 bg-charcoal/35" />
       <div className="frame flex h-full flex-col items-center justify-center text-center">
         <Lines

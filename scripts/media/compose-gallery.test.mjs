@@ -33,11 +33,26 @@ test("pull quotes are woven in between blocks, never at the end", () => {
 });
 
 test("slots prefer matching orientation, then take what remains", () => {
-  const slot = (w, h) => ({ width: w, height: h, alt: "placeholder" });
-  const slots = { portraitA: slot(3, 4), wide: slot(16, 9), portraitB: slot(3, 4) };
-  const out = assignSlots([L(1), P(1)], slots);
+  const slots = { portraitA: "portrait", wide: "landscape", portraitB: "portrait" };
+  const { slots: out, extra } = assignSlots([L(1), P(1)], slots);
   assert.equal(out.portraitA.src, "/p1.jpg");
   assert.equal(out.wide.src, "/l1.jpg");
-  assert.equal(out.portraitB.src, undefined, "unfilled slot keeps its placeholder");
-  assert.equal(assignSlots([], slots).wide, slots.wide);
+  assert.equal(out.portraitB, undefined, "an unfilled slot has no media, so nothing is rendered");
+  assert.deepEqual(extra, []);
+  assert.deepEqual(assignSlots([], slots), { slots: {}, extra: [] });
+});
+
+test("photographs beyond the slots are returned as extras, in order", () => {
+  const { slots: out, extra } = assignSlots([L(1), P(1), P(2), L(2)], { wide: "landscape", tall: "portrait" });
+  assert.equal(out.wide.src, "/l1.jpg");
+  assert.equal(out.tall.src, "/p1.jpg");
+  assert.deepEqual(extra.map((m) => m.src), ["/p2.jpg", "/l2.jpg"]);
+  assert.ok(extra.every((m) => m.width && m.height), "extras keep their original dimensions");
+});
+
+test("a mismatched photograph still fills a slot rather than leaving it empty", () => {
+  const { slots: out, extra } = assignSlots([P(1), P(2)], { tall: "portrait", wide: "landscape" });
+  assert.equal(out.tall.src, "/p1.jpg");
+  assert.equal(out.wide.src, "/p2.jpg");
+  assert.deepEqual(extra, []);
 });

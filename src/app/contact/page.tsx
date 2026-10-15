@@ -63,9 +63,11 @@ export default function ContactPage() {
               </ul>
             )}
 
-            <div className="mt-16 hidden w-[62%] lg:block" {...reveal("mask")}>
-              <Picture media={imagery.contact} sizes="24vw" caption="tag" />
-            </div>
+            {imagery.contact && (
+              <div className="mt-16 hidden w-[62%] lg:block" {...reveal("mask")}>
+                <Picture media={imagery.contact} sizes="24vw" />
+              </div>
+            )}
           </div>
 
           <div className="intro-fade col-span-12 lg:col-span-6 lg:col-start-7 lg:pt-6" style={{ ["--delay" as string]: "0.6s" }}>
