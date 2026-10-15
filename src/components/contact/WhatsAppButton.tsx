@@ -1,21 +1,21 @@
 import { site } from "@/config/site";
-import { whatsappHref } from "@/lib/whatsapp";
 
 /**
  * Floating WhatsApp enquiry button — a quiet brand mark, not a chat widget.
  *
  * Server-rendered with no client JavaScript. Renders nothing until a valid
- * number is configured (NEXT_PUBLIC_WHATSAPP_NUMBER). It sits beneath the
+ * direct https://wa.me/ link is configured (WHATSAPP_URL in src/config/site.ts,
+ * or NEXT_PUBLIC_WHATSAPP_URL at build time). It sits beneath the
  * mobile menu overlay and is made inert while that menu is open.
  */
 export function WhatsAppButton() {
-  const number = site.contact.whatsapp;
-  if (!number) return null;
+  const href = site.contact.whatsapp;
+  if (!href) return null;
 
   return (
     <div data-floating-cta className="whatsapp-float intro-fade fixed z-30 print:hidden" style={{ ["--delay" as string]: "1.6s" }}>
       <a
-        href={whatsappHref(number)}
+        href={href}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`Chat with ${site.name} on WhatsApp (opens in a new tab)`}

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { site } from "@/config/site";
-import { whatsappHref } from "@/lib/whatsapp";
 import { Logo } from "@/components/brand/Logo";
 import { EucalyptusSprig } from "@/components/brand/Botanical";
 import { CurrentYear } from "./CurrentYear";
@@ -64,7 +63,7 @@ export function Footer() {
               )}
               {whatsapp && (
                 <li>
-                  <a href={whatsappHref(whatsapp)} target="_blank" rel="noopener noreferrer" className="link-draw hover:text-ivory">
+                  <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="link-draw hover:text-ivory">
                     WhatsApp
                   </a>
                 </li>

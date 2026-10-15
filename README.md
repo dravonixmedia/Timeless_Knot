@@ -29,7 +29,26 @@ Copy `.env.example` to `.env.local` and fill in:
 | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | Production origin. Drives canonical URLs, sitemap and Open Graph. **While unset, the site is marked `noindex` and robots.txt disallows crawling.** |
 | `ENQUIRY_WEBHOOK_URL` | Server-side endpoint that receives contact enquiries as JSON. **While unset, the contact form runs in clearly labelled demonstration mode and never reports a false success.** |
-| `NEXT_PUBLIC_WHATSAPP_NUMBER` | WhatsApp number in international format (e.g. `+91 98765 43210`). Enables the floating WhatsApp button and the footer/contact WhatsApp links with a prefilled message. **While unset or invalid, all WhatsApp UI is hidden.** |
+| `NEXT_PUBLIC_WHATSAPP_URL` | *Optional* fallback for the WhatsApp link — see **WhatsApp** below. Read at build time. |
+
+## WhatsApp
+
+One direct link drives the floating WhatsApp button, the footer link and the contact-page link.
+Set it in **`src/config/site.ts`**:
+
+```ts
+const WHATSAPP_URL: string | null = "https://wa.me/919876543210";
+```
+
+- Accepted: `https://wa.me/<country code + number>` (digits only, no `+` or spaces) or a WhatsApp
+  Business short link `https://wa.me/message/<code>`. Anything else (other domains, `http:`,
+  `javascript:` …) is rejected and the build log shows a `[whatsapp]` warning.
+- Number links get the studio's prefilled enquiry message unless the link already has `?text=`.
+- Because it is committed, no Cloudflare variable is needed. Commit, merge to `main`, and the
+  automatic deployment shows the button.
+- Alternative: leave it `null` and set `NEXT_PUBLIC_WHATSAPP_URL` as a Cloudflare **Build**
+  variable. Pages are prerendered at build time, so a *runtime* variable has no effect.
+- The button is intentionally hidden on `/contact`, which has its own form and WhatsApp link.
 
 ## Deploying to Cloudflare Workers
 
@@ -39,6 +58,7 @@ which builds the Next.js app and wraps it in a Worker (`.open-next/worker.js`).
 ```bash
 npm run preview    # OpenNext build + local Worker (workerd) at http://localhost:8787
 npm run deploy     # OpenNext build + populate cache + deploy (needs `wrangler login`)
+npm run deploy:preview  # OpenNext build + populate cache + Worker Preview (non-production branches)
 ```
 
 Cloudflare dashboard → Workers & Pages → `timeless-knot` → Settings → Build:
@@ -48,7 +68,8 @@ Cloudflare dashboard → Workers & Pages → `timeless-knot` → Settings → Bu
 | Root directory | `/` |
 | Build command | `npx opennextjs-cloudflare build` |
 | Deploy command | `npx opennextjs-cloudflare deploy` |
-| Build variables | `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `ENQUIRY_WEBHOOK_URL` (when available) |
+| Non-production branch deploy command | `npm run deploy:preview` — builds with OpenNext, copies the prerendered pages into the assets, then runs `wrangler preview`. Cloudflare runs only the install step before this command for preview builds, so a bare `npx wrangler preview` has no `.open-next/worker.js` to deploy. Bindings come from the `previews` block in `wrangler.jsonc`. |
+| Build variables | `NEXT_PUBLIC_SITE_URL`, `ENQUIRY_WEBHOOK_URL` (when available); `NEXT_PUBLIC_WHATSAPP_URL` only if not set in code |
 | Runtime variables / secrets | `ENQUIRY_WEBHOOK_URL` (when available) |
 
 - Use `opennextjs-cloudflare deploy`, **not** a bare `wrangler deploy`: it first copies the prerendered

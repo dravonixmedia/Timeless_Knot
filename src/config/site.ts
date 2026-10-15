@@ -6,7 +6,28 @@
  * displaying invented details. Update these values as the client confirms them.
  */
 
-import { normalizeWhatsappNumber } from "@/lib/whatsapp";
+import { resolveWhatsappUrl } from "@/lib/whatsapp";
+
+/**
+ * WHATSAPP — paste the studio's direct WhatsApp link here, e.g.
+ *
+ *   const WHATSAPP_URL: string | null = "https://wa.me/919876543210";
+ *
+ * Accepted: https://wa.me/<country code + number> (digits only) or a WhatsApp
+ * Business short link https://wa.me/message/<code>. This one link drives the
+ * floating button, the footer link and the contact page link. While it is
+ * null (and NEXT_PUBLIC_WHATSAPP_URL is not set at build time), all WhatsApp
+ * UI stays hidden. No number is assumed.
+ */
+const WHATSAPP_URL: string | null = null;
+
+const whatsappSource = WHATSAPP_URL ?? process.env.NEXT_PUBLIC_WHATSAPP_URL ?? null;
+const whatsappUrl = resolveWhatsappUrl(whatsappSource);
+if (whatsappSource && !whatsappUrl) {
+  console.warn(
+    `[whatsapp] Ignoring invalid WhatsApp link "${whatsappSource}" — expected https://wa.me/<number> or https://wa.me/message/<code>. The WhatsApp button is hidden.`,
+  );
+}
 
 export type NavItem = { label: string; href: string };
 
@@ -29,9 +50,8 @@ export type SiteConfig = {
     email: string | null;
     phone: string | null;
     /**
-     * International format digits only (country code first), from
-     * NEXT_PUBLIC_WHATSAPP_NUMBER. Null — and every WhatsApp link hidden —
-     * until a valid number is configured.
+     * Validated direct https://wa.me/ link (see WHATSAPP_URL above). Null — and
+     * every WhatsApp link hidden — until a valid link is configured.
      */
     whatsapp: string | null;
   };
@@ -57,7 +77,7 @@ export const site: SiteConfig = {
   contact: {
     email: null,
     phone: null,
-    whatsapp: normalizeWhatsappNumber(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER),
+    whatsapp: whatsappUrl,
   },
   social: {
     instagram: null,

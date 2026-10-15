@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { site } from "@/config/site";
-import { whatsappHref } from "@/lib/whatsapp";
 import { imagery } from "@/content/imagery";
 import { Page } from "@/components/layout/Page";
 import { Picture } from "@/components/media/Picture";
@@ -56,7 +55,7 @@ export default function ContactPage() {
                 )}
                 {whatsapp && (
                   <li>
-                    <a className="link-draw" href={whatsappHref(whatsapp)} target="_blank" rel="noopener noreferrer">
+                    <a className="link-draw" href={whatsapp} target="_blank" rel="noopener noreferrer">
                       Message us on WhatsApp
                     </a>
                   </li>
