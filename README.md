@@ -104,7 +104,7 @@ src/
 
 ## Adding real content
 
-**Photographs and wedding stories are folder-based — no code changes needed.** Upload images to the
+**Photographs, portfolio galleries and wedding stories are folder-based — no code changes needed.** Photos placed directly in `weddings/`, `pre-wedding/` or `couples/` publish to the Portfolio with no metadata; a subfolder with `story.json` becomes an individual story. Upload images to the
 right folder in `public/media/` (stories also need a `story.json`), merge to `main`, and the Cloudflare
 build discovers them automatically. See **[docs/IMAGE-UPLOADS.md](docs/IMAGE-UPLOADS.md)** for the
 folders, `story.json` fields and image guidelines.

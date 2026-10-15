@@ -32,10 +32,39 @@ public/media/
 ├── about/             Our Story page (4 photographs)
 ├── experience/        The Experience page (2 photographs)
 ├── contact/           Contact page portrait (1 photograph)
-├── weddings/          One folder per wedding story
-├── pre-wedding/       One folder per pre-wedding story
-└── couples/           One folder per couple story
+├── weddings/          Photos here → Weddings portfolio gallery
+│   └── <story-name>/  A subfolder with story.json → an individual wedding story
+├── pre-wedding/       Photos here → Pre-Wedding portfolio gallery
+│   └── <story-name>/  (optional) individual pre-wedding story
+└── couples/           Photos here → Couples portfolio gallery
+    └── <story-name>/  (optional) individual couple story
 ```
+
+**Two kinds of upload, depending on where the photo goes:**
+
+| You want… | Upload to | Needs `story.json`? | Appears on |
+| --- | --- | --- | --- |
+| Photos in the **portfolio** | directly into `weddings/`, `pre-wedding/` or `couples/` | **No** | Wedding Stories page → Portfolio (filter by category) |
+| A full **wedding story** with its own page | a new subfolder, e.g. `weddings/anika-and-rohan/` | **Yes** (with `"published": true`) | Its own page `/stories/anika-and-rohan` + story listings |
+
+### Portfolio galleries (`weddings/`, `pre-wedding/`, `couples/`)
+
+- Upload photographs **directly** into the category folder — no metadata file is
+  needed. They appear in the Portfolio on the Wedding Stories page after the next
+  successful deployment, with a filter for each category that has photos.
+- Every photograph is shown **uncropped at its original shape** (portrait,
+  landscape, square, 4:5, 2:3, 3:2 …) in a masonry layout.
+- Order is by filename (`01-…`, `02-…`; `2` sorts before `10`). To set the order
+  or add descriptions, add an optional `images.json` in the same folder:
+
+  ```json
+  {
+    "order": ["05-first-look.jpg", "01-haldi.jpg"],
+    "05-first-look.jpg": "The bride turning to see the groom for the first time"
+  }
+  ```
+
+- Removing a photo from the folder removes it from the website on the next deployment.
 
 ### Page photographs (`home/`, `about/`, `experience/`, `contact/`)
 
@@ -52,10 +81,11 @@ prefers a photograph of the right shape:
 
 A portrait goes to the next portrait position and a landscape to the next
 landscape position. Positions without a photograph keep their elegant
-placeholder, so a half-filled folder never breaks the layout. Extra images are
-ignored.
+placeholder, so a half-filled folder never breaks the layout. **Extra images
+beyond the number of positions are uploaded but not shown** — put additional
+portfolio photographs in a category gallery folder instead.
 
-### Stories (`weddings/`, `pre-wedding/`, `couples/`)
+### Individual stories (subfolders of `weddings/`, `pre-wedding/`, `couples/`)
 
 Each story is one folder. **The folder name becomes the web address**, so use
 lowercase words joined by hyphens, e.g. `weddings/anika-and-rohan` →

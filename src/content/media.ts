@@ -35,9 +35,13 @@ export type ManifestStory = {
   seo?: { title?: string; description?: string };
 };
 
+export type GalleryCategory = "weddings" | "pre-wedding" | "couples";
+
 export type MediaManifest = {
   version: 1;
   collections: Record<SiteCollection, ManifestImage[]>;
+  /** Category galleries: photographs placed directly in weddings/, pre-wedding/, couples/. */
+  galleries: Record<GalleryCategory, ManifestImage[]>;
   stories: ManifestStory[];
 };
 
@@ -53,6 +57,24 @@ export const manifest = manifestJson as MediaManifest;
  */
 export function fillSlots<K extends string>(collection: SiteCollection, slots: Record<K, Media>): Record<K, Media> {
   return assignSlots(manifest.collections[collection] ?? [], slots);
+}
+
+const galleryTitles: Record<GalleryCategory, string> = {
+  weddings: "Weddings",
+  "pre-wedding": "Pre-Wedding",
+  couples: "Couples",
+};
+
+export type CategoryGallery = { key: GalleryCategory; title: string; images: Media[] };
+
+/**
+ * Category galleries that contain at least one photograph, in a fixed order.
+ * Images keep their real dimensions so they are shown uncropped.
+ */
+export function getCategoryGalleries(): CategoryGallery[] {
+  return (Object.keys(galleryTitles) as GalleryCategory[])
+    .map((key) => ({ key, title: galleryTitles[key], images: (manifest.galleries?.[key] ?? []).map(toMedia) }))
+    .filter((gallery) => gallery.images.length > 0);
 }
 
 /** Converts published manifest stories into the site's WeddingStory model. */
