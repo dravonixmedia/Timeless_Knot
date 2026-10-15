@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { site } from "@/config/site";
+import { whatsappHref } from "@/lib/whatsapp";
 import { imagery } from "@/content/imagery";
 import { Page } from "@/components/layout/Page";
 import { Picture } from "@/components/media/Picture";
@@ -19,7 +20,7 @@ export default function ContactPage() {
 
   return (
     <Page>
-      <section aria-labelledby="contact-title" className="bg-porcelain pb-[var(--section)] pt-[calc(var(--header-h)+clamp(3rem,9vw,8rem))]">
+      <section data-hide-floating-cta aria-labelledby="contact-title" className="bg-porcelain pb-[var(--section)] pt-[calc(var(--header-h)+clamp(3rem,9vw,8rem))]">
         <div className="frame editorial-grid gap-y-16">
           <div className="col-span-12 lg:col-span-5">
             <p className="eyebrow intro-fade mb-10 flex items-center gap-4 text-muted" style={{ ["--delay" as string]: "0.1s" }}>
@@ -55,7 +56,7 @@ export default function ContactPage() {
                 )}
                 {whatsapp && (
                   <li>
-                    <a className="link-draw" href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer">
+                    <a className="link-draw" href={whatsappHref(whatsapp)} target="_blank" rel="noopener noreferrer">
                       Message us on WhatsApp
                     </a>
                   </li>

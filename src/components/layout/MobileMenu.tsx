@@ -25,10 +25,9 @@ export function MobileMenu({ open, pathname, onClose, onNavigate }: Props) {
   useEffect(() => {
     if (!open) return;
     lockScroll();
-    const main = document.getElementById("main");
-    const footer = document.querySelector<HTMLElement>("footer");
-    main?.setAttribute("inert", "");
-    footer?.setAttribute("inert", "");
+    // Everything behind the dialog: page content, footer and floating actions.
+    const background = Array.from(document.querySelectorAll<HTMLElement>("#main, footer, [data-floating-cta]"));
+    background.forEach((el) => el.setAttribute("inert", ""));
 
     const first = panel.current?.querySelector<HTMLElement>("a");
     const focusTimer = window.setTimeout(() => first?.focus({ preventScroll: true }), 80);
@@ -60,8 +59,7 @@ export function MobileMenu({ open, pathname, onClose, onNavigate }: Props) {
     return () => {
       window.clearTimeout(focusTimer);
       document.removeEventListener("keydown", onKey);
-      main?.removeAttribute("inert");
-      footer?.removeAttribute("inert");
+      background.forEach((el) => el.removeAttribute("inert"));
       unlockScroll();
     };
   }, [open, onClose]);

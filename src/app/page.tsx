@@ -82,7 +82,7 @@ function Hero() {
 
       <div
         aria-hidden="true"
-        className="intro-fade absolute bottom-0 right-[var(--gutter)] hidden h-24 flex-col items-center sm:flex"
+        className="scroll-cue-wrap intro-fade absolute bottom-0 right-[var(--gutter)] hidden h-24 flex-col items-center sm:flex"
         style={{ ["--delay" as string]: "1.8s" }}
       >
         <span className="meta mb-3 text-[0.55rem] text-ivory/70">Scroll</span>

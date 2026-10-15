@@ -29,6 +29,7 @@ Copy `.env.example` to `.env.local` and fill in:
 | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | Production origin. Drives canonical URLs, sitemap and Open Graph. **While unset, the site is marked `noindex` and robots.txt disallows crawling.** |
 | `ENQUIRY_WEBHOOK_URL` | Server-side endpoint that receives contact enquiries as JSON. **While unset, the contact form runs in clearly labelled demonstration mode and never reports a false success.** |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | WhatsApp number in international format (e.g. `+91 98765 43210`). Enables the floating WhatsApp button and the footer/contact WhatsApp links with a prefilled message. **While unset or invalid, all WhatsApp UI is hidden.** |
 
 ## Deploying to Cloudflare Workers
 
@@ -47,7 +48,7 @@ Cloudflare dashboard → Workers & Pages → `timeless-knot` → Settings → Bu
 | Root directory | `/` |
 | Build command | `npx opennextjs-cloudflare build` |
 | Deploy command | `npx opennextjs-cloudflare deploy` |
-| Build variables | `NEXT_PUBLIC_SITE_URL`, `ENQUIRY_WEBHOOK_URL` (when available) |
+| Build variables | `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `ENQUIRY_WEBHOOK_URL` (when available) |
 | Runtime variables / secrets | `ENQUIRY_WEBHOOK_URL` (when available) |
 
 - Use `opennextjs-cloudflare deploy`, **not** a bare `wrangler deploy`: it first copies the prerendered
