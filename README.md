@@ -58,6 +58,7 @@ which builds the Next.js app and wraps it in a Worker (`.open-next/worker.js`).
 ```bash
 npm run preview    # OpenNext build + local Worker (workerd) at http://localhost:8787
 npm run deploy     # OpenNext build + populate cache + deploy (needs `wrangler login`)
+npm run deploy:preview  # OpenNext build + populate cache + Worker Preview (non-production branches)
 ```
 
 Cloudflare dashboard → Workers & Pages → `timeless-knot` → Settings → Build:
@@ -67,7 +68,7 @@ Cloudflare dashboard → Workers & Pages → `timeless-knot` → Settings → Bu
 | Root directory | `/` |
 | Build command | `npx opennextjs-cloudflare build` |
 | Deploy command | `npx opennextjs-cloudflare deploy` |
-| Non-production branch deploy command | `npx opennextjs-cloudflare populateCache local && npx wrangler preview` (Worker Previews; bindings come from the `previews` block in `wrangler.jsonc`) |
+| Non-production branch deploy command | `npm run deploy:preview` — builds with OpenNext, copies the prerendered pages into the assets, then runs `wrangler preview`. Cloudflare runs only the install step before this command for preview builds, so a bare `npx wrangler preview` has no `.open-next/worker.js` to deploy. Bindings come from the `previews` block in `wrangler.jsonc`. |
 | Build variables | `NEXT_PUBLIC_SITE_URL`, `ENQUIRY_WEBHOOK_URL` (when available); `NEXT_PUBLIC_WHATSAPP_URL` only if not set in code |
 | Runtime variables / secrets | `ENQUIRY_WEBHOOK_URL` (when available) |
 
