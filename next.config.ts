@@ -17,9 +17,11 @@ const nextConfig: NextConfig = {
     },
   },
   async redirects() {
-    // The site icon is app/icon.svg; send legacy /favicon.ico requests there
-    // instead of rendering a 404 page through the Worker.
-    return [{ source: "/favicon.ico", destination: "/icon.svg", permanent: true }];
+    // The official favicon is app/favicon.ico. Earlier builds permanently
+    // redirected /favicon.ico to a provisional /icon.svg, and browsers cache
+    // permanent redirects, so /icon.svg now points to the official icon
+    // (temporary, so it can be dropped later without leaving a stale chain).
+    return [{ source: "/icon.svg", destination: "/icon.png", permanent: false }];
   },
   images: {
     // Only photographs discovered by the image manifest are optimised: their

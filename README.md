@@ -92,7 +92,7 @@ src/
     stories.ts            published wedding stories (from story.json folders)
     imagery.ts            site-wide photography slots, extra photographs + optional showreel
   components/
-    brand/                logo (provisional wordmark), botanical illustration
+    brand/                official TK monogram + typeset name, botanical illustration
     layout/               header, mobile menu, footer, page transition wrapper
     media/Picture.tsx     next/image wrapper (real photographs only — empty slots are not rendered)
     motion/               shared reveal observer, Lenis + ScrollTrigger sync, parallax
@@ -119,8 +119,10 @@ folders, `story.json` fields and image guidelines.
 section is hidden. See [docs/IMAGE-UPLOADS.md](docs/IMAGE-UPLOADS.md#homepage-film-homevideo).
 Story films: set `film.embedUrl` (YouTube-nocookie / Vimeo) in `story.json`.
 
-**Logo:** set `site.logo` to the official SVG/PNG files (light and dark versions); the provisional
-typographic wordmark is then replaced everywhere. Replace `src/app/icon.svg` with the official mark.
+**Logo and icons:** the official TK monogram is `public/brand/tk-monogram-white.png` (`site.logo`); it is
+drawn in the surrounding text colour, so it reads on light and dark backgrounds. Browser icons follow the
+App Router file conventions: `src/app/favicon.ico`, `icon.png` (32×32), `apple-icon.png` (180×180), and the
+192/512 icons in `public/icons/` listed by `src/app/manifest.ts`.
 
 **Contact details / Instagram / WhatsApp:** fill in `site.contact` and `site.social`. Anything left
 `null` stays hidden.

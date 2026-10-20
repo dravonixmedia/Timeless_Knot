@@ -89,7 +89,7 @@ export function Header({ pathname }: { pathname: string | null }) {
             className="relative z-[60] -my-2 py-2"
             onNavigate={() => setMenuOpen(false)}
           >
-            <Logo tone={overHero || menuOpen ? "light" : "dark"} className={menuOpen ? "text-ivory" : ""} />
+            <Logo className={menuOpen ? "text-ivory" : ""} />
           </Link>
 
           <nav aria-label="Primary" className="hidden lg:block">

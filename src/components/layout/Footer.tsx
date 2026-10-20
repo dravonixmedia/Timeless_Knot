@@ -17,7 +17,7 @@ export function Footer() {
         <div className="editorial-grid gap-y-16">
           <div className="col-span-12 lg:col-span-6">
             <Link href="/" aria-label={`${site.name} — home`} className="inline-block">
-              <Logo tone="light" />
+              <Logo />
             </Link>
             <p className="mt-10 max-w-[18ch] font-serif text-[clamp(2rem,1.4rem+2.2vw,3.4rem)] font-light italic leading-[1.08] text-pale-sage">
               {site.tagline}
