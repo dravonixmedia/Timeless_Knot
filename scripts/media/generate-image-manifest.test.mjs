@@ -139,6 +139,34 @@ test("photos placed directly in a category folder form its gallery — no story.
   await s.cleanup();
 });
 
+test("beyond-the-frame/ is a gallery only: its photos publish, subfolders are never stories", async () => {
+  const s = await site({
+    "beyond-the-frame/btf 02.jpg": "fixture:landscape.jpg",
+    "beyond-the-frame/btf 01.jpg": "fixture:portrait.jpg",
+    "beyond-the-frame/not-a-story/story.json": { published: true, title: "Not a Story" },
+    "beyond-the-frame/not-a-story/inside.jpg": "fixture:portrait.jpg",
+  });
+  const { manifest, warnings } = await s.run();
+  assert.deepEqual(manifest.galleries["beyond-the-frame"].map((i) => i.src), [
+    "/media/beyond-the-frame/btf%2001.jpg",
+    "/media/beyond-the-frame/btf%2002.jpg",
+  ]);
+  assert.equal(manifest.galleries["beyond-the-frame"][0].alt, "Beyond the Frame — photograph by Timeless Knot");
+  assert.deepEqual(manifest.stories, []);
+  assert.ok(warnings.some((w) => w.includes("beyond-the-frame/not-a-story/inside.jpg") && w.includes("recognised")));
+  assert.ok((await s.ignored()).includes("/media/beyond-the-frame/not-a-story/inside.jpg"));
+  assert.ok(!(await s.ignored()).some((f) => f.startsWith("/media/beyond-the-frame/btf")), "gallery photos are uploaded");
+  await s.cleanup();
+});
+
+test("an empty beyond-the-frame/ folder publishes no gallery", async () => {
+  const s = await site({ "beyond-the-frame/.gitkeep": "", "couples/c 01.jpg": "fixture:portrait.jpg" });
+  const { manifest } = await s.run();
+  assert.equal(manifest.galleries["beyond-the-frame"]?.length ?? 0, 0);
+  assert.equal(manifest.galleries.couples.length, 1);
+  await s.cleanup();
+});
+
 test("EXIF-rotated photographs report their displayed orientation", async () => {
   const s = await site({ "contact/turned.jpg": "fixture:rotated.jpg" });
   const [img] = (await s.run()).manifest.collections.contact;

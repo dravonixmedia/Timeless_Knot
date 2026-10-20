@@ -55,13 +55,16 @@ export const STORY_ROOTS = {
 };
 
 /**
- * Category galleries: photographs placed directly in a story root (not in a
- * story subfolder) form that category's portfolio gallery. No story.json needed.
+ * Category galleries: photographs placed directly in one of these folders form
+ * that category's portfolio gallery. No story.json needed. The story roots are
+ * galleries too (their subfolders are stories); beyond-the-frame/ is a gallery
+ * only.
  */
 export const GALLERY_LABELS = {
   weddings: { title: "Weddings", alt: "Wedding photograph by Timeless Knot" },
   "pre-wedding": { title: "Pre-Wedding", alt: "Pre-wedding portrait by Timeless Knot" },
   couples: { title: "Couples", alt: "Couple portrait by Timeless Knot" },
+  "beyond-the-frame": { title: "Beyond the Frame", alt: "Beyond the Frame — photograph by Timeless Knot" },
 };
 
 export const STORY_CATEGORIES = ["Wedding Photography", "Wedding Film", "Elopement", "Pre-Wedding", "Couple Story"];
@@ -498,7 +501,8 @@ function isRecognisedLocation(relFromPublic) {
   const dir = parts.join("/");
   if (SITE_COLLECTIONS.includes(dir) || dir === VIDEO_DIR) return true;
   // weddings/<photo> is a category gallery; weddings/<story>/<photo> is a story.
-  return (parts.length === 1 || parts.length === 2) && Object.hasOwn(STORY_ROOTS, parts[0]);
+  if (parts.length === 1 && Object.hasOwn(GALLERY_LABELS, parts[0])) return true;
+  return parts.length === 2 && Object.hasOwn(STORY_ROOTS, parts[0]);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -561,9 +565,9 @@ export async function generateManifest({ publicDir, outFile, ignoreFile, cacheDi
     collections[name] = images;
   }
 
-  // Category galleries: images directly inside weddings/, pre-wedding/, couples/
+  // Category galleries: images directly inside weddings/, pre-wedding/, couples/, beyond-the-frame/
   const galleries = {};
-  for (const root of Object.keys(STORY_ROOTS)) {
+  for (const root of Object.keys(GALLERY_LABELS)) {
     const absDir = path.join(mediaDir, root);
     const { value: config } = await readJson(path.join(absDir, "images.json"), report);
     const found = await readImages(absDir, publicDir, report, { order: config?.order });
