@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import type { CategoryGallery, GalleryCategory } from "@/content/media";
+import { categoryFromParam, PORTFOLIO_CATEGORY_PARAM } from "@/lib/portfolio";
 import { Picture } from "@/components/media/Picture";
 import { reveal } from "@/components/ui/Typography";
 
@@ -9,9 +11,48 @@ import { reveal } from "@/components/ui/Typography";
  * Category portfolio (weddings, pre-wedding, couples). A column-based masonry
  * keeps every photograph at its original aspect ratio — portrait, landscape or
  * square — so nothing is cropped or forced into a uniform tile.
+ *
+ * The selected category is kept in the URL (/stories?category=weddings), so it
+ * survives refresh, back/forward and shared links. The page stays statically
+ * prerendered: its HTML shows every photograph (the Suspense fallback) and the
+ * URL's category is applied in the browser.
  */
 export function PortfolioGallery({ galleries }: { galleries: CategoryGallery[] }) {
-  const [active, setActive] = useState<GalleryCategory | "all">("all");
+  return (
+    <Suspense fallback={<GalleryView galleries={galleries} active="all" />}>
+      <UrlPortfolioGallery galleries={galleries} />
+    </Suspense>
+  );
+}
+
+function UrlPortfolioGallery({ galleries }: { galleries: CategoryGallery[] }) {
+  const params = useSearchParams();
+  const requested = categoryFromParam(params.get(PORTFOLIO_CATEGORY_PARAM));
+  // A category without photographs falls back to All rather than an empty grid.
+  const active = requested !== "all" && galleries.some((g) => g.key === requested) ? requested : "all";
+
+  const select = (category: GalleryCategory | "all") => {
+    const next = new URLSearchParams(params.toString());
+    if (category === "all") next.delete(PORTFOLIO_CATEGORY_PARAM);
+    else next.set(PORTFOLIO_CATEGORY_PARAM, category);
+    const query = next.toString();
+    // Replace (not push) so filtering doesn't stack history entries; Next.js
+    // keeps useSearchParams in sync with native history updates.
+    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+  };
+
+  return <GalleryView galleries={galleries} active={active} onSelect={select} />;
+}
+
+function GalleryView({
+  galleries,
+  active,
+  onSelect,
+}: {
+  galleries: CategoryGallery[];
+  active: GalleryCategory | "all";
+  onSelect?: (category: GalleryCategory | "all") => void;
+}) {
   const showFilters = galleries.length > 1;
   const images =
     active === "all"
@@ -30,7 +71,7 @@ export function PortfolioGallery({ galleries }: { galleries: CategoryGallery[] }
                   key={option.key}
                   type="button"
                   aria-pressed={selected}
-                  onClick={() => setActive(option.key)}
+                  onClick={() => onSelect?.(option.key)}
                   className={`meta min-h-11 px-2 text-[0.64rem] tracking-[0.2em] transition-colors duration-500 ${
                     selected ? "text-charcoal" : "text-muted hover:text-charcoal"
                   }`}
