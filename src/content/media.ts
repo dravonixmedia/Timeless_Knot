@@ -35,7 +35,7 @@ export type ManifestStory = {
   seo?: { title?: string; description?: string };
 };
 
-export type GalleryCategory = "weddings" | "pre-wedding" | "couples";
+export type GalleryCategory = "weddings" | "pre-wedding" | "couples" | "beyond-the-frame";
 
 /** The homepage film uploaded to public/media/home/video/ (H.264 MP4). */
 export type HomeVideo = {
@@ -56,7 +56,7 @@ export type HomeVideo = {
 export type MediaManifest = {
   version: 1;
   collections: Record<SiteCollection, ManifestImage[]>;
-  /** Category galleries: photographs placed directly in weddings/, pre-wedding/, couples/. */
+  /** Category galleries: photographs placed directly in weddings/, pre-wedding/, couples/, beyond-the-frame/. */
   galleries: Record<GalleryCategory, ManifestImage[]>;
   stories: ManifestStory[];
   /** Null while no valid video is uploaded — the homepage film section is then not rendered. */
@@ -86,6 +86,7 @@ const galleryTitles: Record<GalleryCategory, string> = {
   weddings: "Weddings",
   "pre-wedding": "Pre-Wedding",
   couples: "Couples",
+  "beyond-the-frame": "Beyond the Frame",
 };
 
 export type CategoryGallery = { key: GalleryCategory; title: string; images: Media[] };

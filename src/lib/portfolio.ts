@@ -6,7 +6,7 @@ import type { GalleryCategory } from "@/content/media";
  */
 export const PORTFOLIO_CATEGORY_PARAM = "category";
 
-export const PORTFOLIO_CATEGORIES: readonly GalleryCategory[] = ["weddings", "pre-wedding", "couples"];
+export const PORTFOLIO_CATEGORIES: readonly GalleryCategory[] = ["weddings", "pre-wedding", "couples", "beyond-the-frame"];
 
 /** Link to the portfolio with a category selected. */
 export const portfolioCategoryHref = (category: GalleryCategory) => `/stories?${PORTFOLIO_CATEGORY_PARAM}=${category}`;

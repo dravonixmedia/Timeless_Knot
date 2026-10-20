@@ -546,13 +546,15 @@ body:has([data-floating-cta]) .scroll-cue-wrap {
 
 :root[data-portfolio="weddings"] [data-portfolio-fallback] [data-portfolio-variant="weddings"],
 :root[data-portfolio="pre-wedding"] [data-portfolio-fallback] [data-portfolio-variant="pre-wedding"],
-:root[data-portfolio="couples"] [data-portfolio-fallback] [data-portfolio-variant="couples"] {
+:root[data-portfolio="couples"] [data-portfolio-fallback] [data-portfolio-variant="couples"],
+:root[data-portfolio="beyond-the-frame"] [data-portfolio-fallback] [data-portfolio-variant="beyond-the-frame"] {
   display: block;
 }
 
 :root[data-portfolio="weddings"] [data-portfolio-fallback] figure:not([data-category="weddings"]),
 :root[data-portfolio="pre-wedding"] [data-portfolio-fallback] figure:not([data-category="pre-wedding"]),
-:root[data-portfolio="couples"] [data-portfolio-fallback] figure:not([data-category="couples"]) {
+:root[data-portfolio="couples"] [data-portfolio-fallback] figure:not([data-category="couples"]),
+:root[data-portfolio="beyond-the-frame"] [data-portfolio-fallback] figure:not([data-category="beyond-the-frame"]) {
   display: none;
 }
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { imagery, showreel } from "@/content/imagery";
 import { getCategoryGalleries, getHomeVideo } from "@/content/media";
+import type { Media } from "@/content/types";
 import { portfolioCategoryHref } from "@/lib/portfolio";
 import { getFeaturedStories, getShowcaseFilm } from "@/content/stories";
 import { Page } from "@/components/layout/Page";
@@ -204,22 +205,29 @@ function FeaturedStories() {
 
 /* 03b — Portfolio highlights ---------------------------------------------- */
 
-const highlightLayout = [
-  { className: "col-span-12 sm:col-span-6 lg:col-span-4", sizes: "(min-width: 1024px) 32vw, (min-width: 640px) 50vw, 100vw" },
-  { className: "col-span-10 col-start-3 sm:col-span-6 sm:col-start-7 sm:mt-24 lg:col-span-4 lg:col-start-5 lg:mt-40", sizes: "(min-width: 1024px) 32vw, (min-width: 640px) 50vw, 84vw" },
-  { className: "col-span-11 sm:col-span-6 sm:col-start-4 lg:col-span-4 lg:col-start-9 lg:mt-16", sizes: "(min-width: 1024px) 32vw, (min-width: 640px) 50vw, 92vw" },
-] as const;
+/** Column layouts by number of categories with photographs (class names must be literal for Tailwind). */
+const highlightGrid: Record<number, { grid: string; sizes: string }> = {
+  1: { grid: "sm:grid-cols-2 lg:grid-cols-3", sizes: "(min-width: 1024px) 31vw, (min-width: 640px) 47vw, 100vw" },
+  2: { grid: "sm:grid-cols-2", sizes: "(min-width: 640px) 47vw, 100vw" },
+  3: { grid: "sm:grid-cols-3", sizes: "(min-width: 640px) 31vw, 100vw" },
+  4: { grid: "sm:grid-cols-2 lg:grid-cols-4", sizes: "(min-width: 1024px) 23vw, (min-width: 640px) 47vw, 100vw" },
+};
+
+/** The card photograph: the category's first portrait (cards are 4:5), else its first photograph. */
+const coverFor = (images: Media[]) => images.find((m) => m.width / m.height < 0.9) ?? images[0];
 
 /**
- * Until real stories are published, the home page shows the first photograph
- * of each portfolio category instead — real work, at its original proportions.
+ * Until real stories are published, the home page shows one photograph from
+ * each portfolio category as a single row of equal cards (2 × 2 on tablet, one
+ * column on phones). A category without photographs simply has no card.
  */
 function PortfolioHighlights() {
   if (getFeaturedStories(1).length > 0) return null;
   const picks = getCategoryGalleries()
-    .map((gallery) => ({ key: gallery.key, title: gallery.title, image: gallery.images[0] }))
-    .slice(0, highlightLayout.length);
+    .map((gallery) => ({ key: gallery.key, title: gallery.title, image: coverFor(gallery.images) }))
+    .slice(0, 4);
   if (picks.length === 0) return null;
+  const layout = highlightGrid[picks.length];
 
   return (
     <section aria-labelledby="portfolio-title" className="bg-porcelain pb-[var(--section)]">
@@ -236,13 +244,16 @@ function PortfolioHighlights() {
           </p>
         </div>
 
-        <div className="editorial-grid mt-16 items-start gap-y-14 lg:mt-24">
+        <ul className={`mt-16 grid grid-cols-1 gap-x-6 gap-y-12 lg:mt-24 lg:gap-x-8 ${layout.grid}`}>
           {picks.map((pick, i) => (
-            <figure key={pick.image.src} className={highlightLayout[i].className}>
+            <li key={pick.key}>
               {/* The whole card opens that category in the portfolio (/stories?category=…). */}
               <Link href={portfolioCategoryHref(pick.key)} aria-label={`View the ${pick.title} portfolio`} className="group block">
                 <div {...reveal("mask", i * 0.1)}>
-                  <Picture media={pick.image} sizes={highlightLayout[i].sizes} imageClassName="zoom-media" />
+                  {/* Equal 4:5 frames so the four read as one collection; focal points are honoured. */}
+                  <div className="relative aspect-[4/5] overflow-hidden">
+                    <Picture media={pick.image} layout="fill" sizes={layout.sizes} imageClassName="zoom-media" />
+                  </div>
                 </div>
                 <span
                   className="meta mt-5 block text-[0.62rem] text-muted transition-colors duration-500 group-hover:text-charcoal"
@@ -251,11 +262,11 @@ function PortfolioHighlights() {
                   {pick.title}
                 </span>
               </Link>
-            </figure>
+            </li>
           ))}
-          <div className="col-span-12 flex lg:justify-end" {...reveal("up")}>
-            <ButtonLink href="/stories">View the portfolio</ButtonLink>
-          </div>
+        </ul>
+        <div className="mt-14 flex lg:mt-16 lg:justify-end" {...reveal("up")}>
+          <ButtonLink href="/stories">View the portfolio</ButtonLink>
         </div>
       </div>
     </section>

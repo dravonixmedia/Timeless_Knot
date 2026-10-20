@@ -37,18 +37,20 @@ public/media/
 │   └── <story-name>/  A subfolder with story.json → an individual wedding story
 ├── pre-wedding/       Photos here → Pre-Wedding portfolio gallery
 │   └── <story-name>/  (optional) individual pre-wedding story
-└── couples/           Photos here → Couples portfolio gallery
-    └── <story-name>/  (optional) individual couple story
+├── couples/           Photos here → Couples portfolio gallery
+│   └── <story-name>/  (optional) individual couple story
+└── beyond-the-frame/  Photos here → Beyond the Frame portfolio gallery
+                       (gallery only — subfolders are not read as stories)
 ```
 
 **Two kinds of upload, depending on where the photo goes:**
 
 | You want… | Upload to | Needs `story.json`? | Appears on |
 | --- | --- | --- | --- |
-| Photos in the **portfolio** | directly into `weddings/`, `pre-wedding/` or `couples/` | **No** | Wedding Stories page → Portfolio (filter by category) |
+| Photos in the **portfolio** | directly into `weddings/`, `pre-wedding/`, `couples/` or `beyond-the-frame/` | **No** | Wedding Stories page → Portfolio (filter by category) |
 | A full **wedding story** with its own page | a new subfolder, e.g. `weddings/anika-and-rohan/` | **Yes** (with `"published": true`) | Its own page `/stories/anika-and-rohan` + story listings |
 
-### Portfolio galleries (`weddings/`, `pre-wedding/`, `couples/`)
+### Portfolio galleries (`weddings/`, `pre-wedding/`, `couples/`, `beyond-the-frame/`)
 
 - Upload photographs **directly** into the category folder — no metadata file is
   needed. They appear in the Portfolio on the Wedding Stories page after the next
@@ -66,6 +68,15 @@ public/media/
   ```
 
 - Removing a photo from the folder removes it from the website on the next deployment.
+- **Home page portfolio cards.** Each category that has photos gets one card in
+  the home page "Moments Worth Remembering" section, linking to
+  `/stories?category=<folder>`. The card shows the category's first **portrait**
+  photograph (in the gallery order above) in a 4:5 frame — a 4:5 portrait is
+  shown uncropped — or the first photograph if the folder has no portraits.
+  An empty folder has no card and no filter. With all four categories the cards
+  sit four in a row on desktop, 2 × 2 on tablets and one per row on phones.
+- `beyond-the-frame/` is a gallery only: it never contains stories and does not
+  use `story.json`.
 
 ### Page photographs (`home/`, `about/`, `experience/`, `contact/`)
 

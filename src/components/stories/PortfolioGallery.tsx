@@ -8,7 +8,7 @@ import { Picture } from "@/components/media/Picture";
 import { reveal } from "@/components/ui/Typography";
 
 /**
- * Category portfolio (weddings, pre-wedding, couples). A column-based masonry
+ * Category portfolio (weddings, pre-wedding, couples, beyond the frame). A column-based masonry
  * keeps every photograph at its original aspect ratio — portrait, landscape or
  * square — so nothing is cropped or forced into a uniform tile.
  *
