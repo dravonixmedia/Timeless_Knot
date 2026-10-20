@@ -9,6 +9,8 @@ import { WhatsAppButton } from "@/components/contact/WhatsAppButton";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { RevealObserver } from "@/components/motion/RevealObserver";
 import { JsonLd, organizationSchema } from "@/lib/seo";
+import { getCategoryGalleries } from "@/content/media";
+import { portfolioBootScript } from "@/lib/portfolio";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -58,11 +60,15 @@ export const viewport: Viewport = {
  */
 const bootScript = `(function(d){d.classList.add('js');setTimeout(function(){if(!d.classList.contains('reveal-ready'))d.classList.remove('js')},4000)})(document.documentElement)`;
 
+/** Applies a /stories?category=… selection before first paint (see src/lib/portfolio.ts). */
+const portfolioBoot = portfolioBootScript(getCategoryGalleries().map((g) => g.key));
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${cormorant.variable} ${manrope.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
+        <script dangerouslySetInnerHTML={{ __html: portfolioBoot }} />
       </head>
       <body>
         <JsonLd data={organizationSchema()} />

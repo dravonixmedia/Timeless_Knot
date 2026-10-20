@@ -517,3 +517,33 @@ body:has([data-floating-cta]) .scroll-cue-wrap {
     transition: background-color 0.2s linear, border-color 0.2s linear;
   }
 }
+
+/* ==========================================================================
+   PORTFOLIO — category from the URL before hydration
+   /stories is prerendered with every photograph and a filter bar per state
+   (StaticGallery). The <head> boot script sets <html data-portfolio="…"> for a
+   valid ?category=, and these rules show that state on first paint; hydration
+   then swaps in the live gallery, which looks identical. Keep the category
+   list in step with PORTFOLIO_CATEGORIES (src/lib/portfolio.ts).
+   ========================================================================== */
+
+[data-portfolio-fallback] [data-portfolio-variant]:not([data-portfolio-variant="all"]) {
+  display: none;
+}
+
+:root[data-portfolio] [data-portfolio-fallback] [data-portfolio-variant="all"] {
+  display: none;
+}
+
+:root[data-portfolio="weddings"] [data-portfolio-fallback] [data-portfolio-variant="weddings"],
+:root[data-portfolio="pre-wedding"] [data-portfolio-fallback] [data-portfolio-variant="pre-wedding"],
+:root[data-portfolio="couples"] [data-portfolio-fallback] [data-portfolio-variant="couples"] {
+  display: block;
+}
+
+:root[data-portfolio="weddings"] [data-portfolio-fallback] figure:not([data-category="weddings"]),
+:root[data-portfolio="pre-wedding"] [data-portfolio-fallback] figure:not([data-category="pre-wedding"]),
+:root[data-portfolio="couples"] [data-portfolio-fallback] figure:not([data-category="couples"]) {
+  display: none;
+}
+

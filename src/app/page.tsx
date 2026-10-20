@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { imagery, showreel } from "@/content/imagery";
 import { getCategoryGalleries, getHomeVideo } from "@/content/media";
+import { portfolioCategoryHref } from "@/lib/portfolio";
 import { getFeaturedStories, getShowcaseFilm } from "@/content/stories";
 import { Page } from "@/components/layout/Page";
 import { Picture } from "@/components/media/Picture";
@@ -210,7 +212,7 @@ const highlightLayout = [
 function PortfolioHighlights() {
   if (getFeaturedStories(1).length > 0) return null;
   const picks = getCategoryGalleries()
-    .map((gallery) => ({ title: gallery.title, image: gallery.images[0] }))
+    .map((gallery) => ({ key: gallery.key, title: gallery.title, image: gallery.images[0] }))
     .slice(0, highlightLayout.length);
   if (picks.length === 0) return null;
 
@@ -231,12 +233,18 @@ function PortfolioHighlights() {
         <div className="editorial-grid mt-16 items-start gap-y-14 lg:mt-24">
           {picks.map((pick, i) => (
             <figure key={pick.image.src} className={highlightLayout[i].className}>
-              <div {...reveal("mask", i * 0.1)}>
-                <Picture media={pick.image} sizes={highlightLayout[i].sizes} />
-              </div>
-              <figcaption className="meta mt-5 text-[0.62rem] text-muted" {...reveal("fade", 0.2)}>
-                {pick.title}
-              </figcaption>
+              {/* The whole card opens that category in the portfolio (/stories?category=…). */}
+              <Link href={portfolioCategoryHref(pick.key)} aria-label={`View the ${pick.title} portfolio`} className="group block">
+                <div {...reveal("mask", i * 0.1)}>
+                  <Picture media={pick.image} sizes={highlightLayout[i].sizes} imageClassName="zoom-media" />
+                </div>
+                <span
+                  className="meta mt-5 block text-[0.62rem] text-muted transition-colors duration-500 group-hover:text-charcoal"
+                  {...reveal("fade", 0.2)}
+                >
+                  {pick.title}
+                </span>
+              </Link>
             </figure>
           ))}
           <div className="col-span-12 flex lg:justify-end" {...reveal("up")}>
