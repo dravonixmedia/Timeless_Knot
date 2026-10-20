@@ -46,10 +46,12 @@ export type SiteConfig = {
   /** True once a real production URL is configured. */
   hasProductionUrl: boolean;
   /**
-   * Official logo files supplied by the client (SVG or transparent PNG in /public).
-   * While null, a provisional typographic wordmark is rendered instead.
+   * Official TK monogram supplied by the client: a single-colour (white)
+   * transparent PNG in /public. It is drawn through a CSS mask in the
+   * surrounding text colour, so the artwork is unchanged and stays legible on
+   * light and dark backgrounds. Dimensions are the file's own.
    */
-  logo: { light: string; dark: string; width: number; height: number } | null;
+  logo: { monogram: string; width: number; height: number };
   contact: {
     email: string | null;
     phone: string | null;
@@ -77,7 +79,7 @@ export const site: SiteConfig = {
     "Timeless Knot is a wedding photography and cinematography studio documenting genuine emotion, meaningful traditions and personal celebrations through thoughtful imagery and cinematic storytelling.",
   url: envUrl || "http://localhost:3000",
   hasProductionUrl: Boolean(envUrl),
-  logo: null,
+  logo: { monogram: "/brand/tk-monogram-white.png", width: 514, height: 542 },
   contact: {
     email: null,
     phone: null,
