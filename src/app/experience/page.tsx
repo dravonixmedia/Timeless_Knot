@@ -3,7 +3,6 @@ import { extraImagery, imagery } from "@/content/imagery";
 import { composeGallery } from "@/lib/compose-gallery";
 import { Page } from "@/components/layout/Page";
 import { Picture } from "@/components/media/Picture";
-import { Parallax } from "@/components/motion/Parallax";
 import { Gallery } from "@/components/stories/Gallery";
 import { Invitation } from "@/components/sections/Invitation";
 import { Eyebrow, Lines, reveal } from "@/components/ui/Typography";
@@ -74,51 +73,53 @@ export default function ExperiencePage() {
             </p>
           </div>
         </div>
+      </section>
+
+      {/* The landscape photograph holds still while the Journey scrolls up over it. */}
+      <div className="relative">
         {experienceHero && (
-          <div className="intro-fade" style={{ ["--delay" as string]: "0.6s" }}>
-            <Parallax amount={12} className="h-[70svh] min-h-[22rem]">
-              <Picture media={experienceHero} layout="fill" sizes="100vw" priority />
-            </Parallax>
+          <div className="intro-fade sticky top-0 h-[70svh] min-h-[22rem] overflow-hidden" style={{ ["--delay" as string]: "0.6s" }}>
+            <Picture media={experienceHero} layout="fill" sizes="100vw" priority />
           </div>
         )}
-      </section>
 
-      {/* Journey */}
-      <section aria-labelledby="journey-title" className="bg-porcelain section-y">
-        <div className="frame editorial-grid gap-y-14">
-          <div className="col-span-12 self-start lg:sticky lg:top-32 lg:col-span-4">
-            <div {...reveal("fade")}>
-              <Eyebrow className="text-muted">The Journey</Eyebrow>
+        {/* Journey */}
+        <section aria-labelledby="journey-title" className="relative bg-porcelain pb-[var(--section-tight)] pt-[var(--section)]">
+          <div className="frame editorial-grid gap-y-14">
+            <div className="col-span-12 self-start lg:sticky lg:top-32 lg:col-span-4">
+              <div {...reveal("fade")}>
+                <Eyebrow className="text-muted">The Journey</Eyebrow>
+              </div>
+              <Lines id="journey-title" className="display-lg mt-10" lines={["From Hello", <em key="f">to Forever.</em>]} />
+              <p className="body-lg mt-8 max-w-[36ch] text-muted" {...reveal("up", 0.15)}>
+                Six quiet chapters, each one guided by the same belief: your wedding should be remembered as it was
+                felt.
+              </p>
             </div>
-            <Lines id="journey-title" className="display-lg mt-10" lines={["From Hello", <em key="f">to Forever.</em>]} />
-            <p className="body-lg mt-8 max-w-[36ch] text-muted" {...reveal("up", 0.15)}>
-              Six quiet chapters, each one guided by the same belief: your wedding should be remembered as it was
-              felt.
-            </p>
-          </div>
 
-          <ol className="col-span-12 lg:col-span-7 lg:col-start-6">
-            {stages.map((stage, i) => (
-              <li
-                key={stage.title}
-                className="grid grid-cols-[3.75rem_1fr] gap-x-5 border-t border-charcoal/12 py-10 sm:grid-cols-[8rem_1fr] sm:gap-x-8 lg:py-14"
-                {...reveal("up")}
-              >
-                <span aria-hidden="true" className="font-serif text-[clamp(2.4rem,1.8rem+2.4vw,4.75rem)] font-light italic leading-[0.9] text-olive">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div>
-                  <h3 className="display-sm">
-                    <span className="sr-only">{`Chapter ${i + 1}: `}</span>
-                    {stage.title}
-                  </h3>
-                  <p className="mt-4 max-w-[48ch] text-muted">{stage.copy}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
+            <ol className="col-span-12 lg:col-span-7 lg:col-start-6">
+              {stages.map((stage, i) => (
+                <li
+                  key={stage.title}
+                  className="grid grid-cols-[3.75rem_1fr] gap-x-5 border-t border-charcoal/12 py-10 sm:grid-cols-[8rem_1fr] sm:gap-x-8 lg:py-14"
+                  {...reveal("up")}
+                >
+                  <span aria-hidden="true" className="font-serif text-[clamp(2.4rem,1.8rem+2.4vw,4.75rem)] font-light italic leading-[0.9] text-olive">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div>
+                    <h3 className="display-sm">
+                      <span className="sr-only">{`Chapter ${i + 1}: `}</span>
+                      {stage.title}
+                    </h3>
+                    <p className="mt-4 max-w-[48ch] text-muted">{stage.copy}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      </div>
 
       {/* Editorial pairing */}
       <section aria-labelledby="keep-title" className="bg-pale-sage section-y">

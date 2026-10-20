@@ -33,7 +33,7 @@
 :root {
   /* Layout rhythm */
   --gutter: clamp(1.25rem, 4.2vw, 4.5rem);
-  --section: clamp(6rem, 13vw, 12.5rem);
+  --section: clamp(5rem, 11vw, 10rem);
   --section-tight: clamp(4.5rem, 9vw, 8rem);
   --max: 100rem;
   --header-h: 5.25rem;
@@ -284,6 +284,15 @@ html.lenis body {
   }
 
   /* Line-by-line headline reveal. Each .line clips its inner span. */
+  /* Section dividers draw from left to right, once. */
+  .js [data-reveal="rule"] {
+    transform-origin: left center;
+    transition: transform 0.8s var(--ease-editorial);
+  }
+  .js [data-reveal="rule"]:not([data-inview]) {
+    transform: scaleX(0);
+  }
+
   .js [data-reveal="lines"] .line > span {
     display: inline-block;
     transition: transform 1.15s var(--ease-editorial), opacity 0.9s var(--ease-soft);
