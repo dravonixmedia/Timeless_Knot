@@ -3,7 +3,7 @@ import { extraImagery, imagery } from "@/content/imagery";
 import { composeGallery } from "@/lib/compose-gallery";
 import { Page } from "@/components/layout/Page";
 import { Picture } from "@/components/media/Picture";
-import { Parallax } from "@/components/motion/Parallax";
+import { SectionRule } from "@/components/ui/SectionRule";
 import { Gallery } from "@/components/stories/Gallery";
 import { Invitation } from "@/components/sections/Invitation";
 import { Eyebrow, Lines, reveal } from "@/components/ui/Typography";
@@ -74,8 +74,10 @@ export default function OurStoryPage() {
         </div>
       </section>
 
+      <SectionRule />
+
       {/* Brand introduction */}
-      <section aria-labelledby="intro-title" className="bg-porcelain section-y">
+      <section aria-labelledby="intro-title" className="bg-porcelain pb-[var(--section)] pt-[var(--section-tight)]">
         <div className="frame editorial-grid gap-y-10">
           <div className="col-span-12 lg:col-span-3" {...reveal("fade")}>
             <Eyebrow className="text-muted">Who we are</Eyebrow>
@@ -100,12 +102,13 @@ export default function OurStoryPage() {
 
       {/* Vision */}
       <section aria-labelledby="vision-title" className="relative bg-forest text-ivory">
+        {/* The landscape photograph holds still while the vision text scrolls up over it. */}
         {storyVision && (
-          <Parallax amount={14} className="h-[62svh] min-h-[22rem]">
+          <div className="sticky top-0 h-[62svh] min-h-[22rem] overflow-hidden md:h-[46svh] lg:h-[62svh]">
             <Picture media={storyVision} layout="fill" sizes="100vw" />
-          </Parallax>
+          </div>
         )}
-        <div className="frame editorial-grid gap-y-10 section-y">
+        <div className="frame editorial-grid relative gap-y-10 bg-forest section-y">
           <div className="col-span-12 lg:col-span-4">
             <div {...reveal("fade")}>
               <Eyebrow className="text-sage">Our Vision</Eyebrow>
@@ -195,7 +198,7 @@ export default function OurStoryPage() {
       </section>
 
       {/* Personalised experiences */}
-      <section aria-labelledby="personal-title" className="bg-porcelain section-y">
+      <section aria-labelledby="personal-title" className="bg-porcelain pb-[var(--section-tight)] pt-[var(--section)]">
         <div className="frame">
           <div className="mx-auto max-w-4xl text-center">
             <div className="flex justify-center" {...reveal("fade")}>
@@ -216,6 +219,7 @@ export default function OurStoryPage() {
       </section>
 
       <Invitation
+        divided
         heading={["Your Story", <em key="b">Begins Here.</em>]}
         copy="We would love to learn about you, your plans and the celebration you imagine."
         cta="Start the conversation"

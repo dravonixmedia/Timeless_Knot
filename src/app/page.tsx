@@ -13,6 +13,7 @@ import { StoryCard } from "@/components/stories/StoryCard";
 import { Invitation } from "@/components/sections/Invitation";
 import { ArrowLink, ButtonLink } from "@/components/ui/Links";
 import { Eyebrow, Lines, reveal } from "@/components/ui/Typography";
+import { SectionRule } from "@/components/ui/SectionRule";
 
 export default function HomePage() {
   return (
@@ -24,8 +25,11 @@ export default function HomePage() {
       <Philosophy />
       <Films />
       <ExperienceIntro />
-      <EditorialMoment />
-      <Invitation />
+      {/* "The Moments Pass" holds still while the closing invitation scrolls up over it. */}
+      <div className="relative">
+        <EditorialMoment />
+        <Invitation />
+      </div>
     </Page>
   );
 }
@@ -163,7 +167,8 @@ function FeaturedStories() {
   return (
     <section aria-labelledby="featured-title" className="bg-porcelain pb-[var(--section)]">
       <div className="frame">
-        <div className="editorial-grid items-end gap-y-8 border-t border-charcoal/12 pt-[var(--section-tight)]">
+        <SectionRule contained={false} />
+        <div className="editorial-grid items-end gap-y-8 pt-[var(--section-tight)]">
           <Lines
             id="featured-title"
             className="display-lg col-span-12 lg:col-span-7"
@@ -219,7 +224,8 @@ function PortfolioHighlights() {
   return (
     <section aria-labelledby="portfolio-title" className="bg-porcelain pb-[var(--section)]">
       <div className="frame">
-        <div className="editorial-grid items-end gap-y-8 border-t border-charcoal/12 pt-[var(--section-tight)]">
+        <SectionRule contained={false} />
+        <div className="editorial-grid items-end gap-y-8 pt-[var(--section-tight)]">
           <Lines
             id="portfolio-title"
             className="display-lg col-span-12 lg:col-span-7"
@@ -383,13 +389,13 @@ function EditorialMoment() {
   return (
     <section
       aria-labelledby="moment-title"
-      className={`relative isolate overflow-hidden bg-charcoal text-ivory ${imagery.editorialMoment ? "h-[92svh] min-h-[32rem]" : "section-y"}`}
+      className={`isolate overflow-hidden bg-charcoal text-ivory ${imagery.editorialMoment ? "sticky top-0 h-[60svh] min-h-[22rem] md:h-[50svh] lg:h-[92svh] lg:min-h-[32rem]" : "relative section-y"}`}
     >
       {/* Without a photograph this stays a typographic interlude on charcoal. */}
       {imagery.editorialMoment && (
-        <Parallax amount={16} className="absolute inset-0 -z-10">
+        <div className="absolute inset-0 -z-10">
           <Picture media={imagery.editorialMoment} layout="fill" sizes="100vw" />
-        </Parallax>
+        </div>
       )}
       <div aria-hidden="true" className="absolute inset-0 -z-10 bg-charcoal/35" />
       <div className="frame flex h-full flex-col items-center justify-center text-center">

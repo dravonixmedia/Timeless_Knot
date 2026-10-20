@@ -4,6 +4,7 @@ import { Picture } from "@/components/media/Picture";
 import { Monogram } from "@/components/brand/Logo";
 import { ButtonLink } from "@/components/ui/Links";
 import { Lines, reveal } from "@/components/ui/Typography";
+import { SectionRule } from "@/components/ui/SectionRule";
 
 /**
  * Closing invitation used across pages — a personal note, not a sales banner.
@@ -13,13 +14,20 @@ export function Invitation({
   heading = ["Let’s Create", <em key="t">Something Timeless.</em>],
   copy = "Every extraordinary story begins with a conversation. We’d love to hear yours.",
   cta = "Tell us your story",
+  divided = false,
 }: {
   heading?: ReactNode[];
   copy?: string;
   cta?: string;
+  /** Opens with a section divider: use when the section above is also porcelain. */
+  divided?: boolean;
 }) {
   return (
-    <section aria-labelledby="invitation-title" className="relative overflow-hidden bg-porcelain section-y">
+    <section
+      aria-labelledby="invitation-title"
+      className={`relative overflow-hidden bg-porcelain ${divided ? "pb-[var(--section)]" : "section-y"}`}
+    >
+      {divided && <SectionRule className="mb-[var(--section-tight)]" />}
       <div className="frame relative">
         {imagery.invitationLeft && (
           <div className="pointer-events-none absolute left-[var(--gutter)] top-0 hidden w-[15%] max-w-56 lg:block" {...reveal("mask")}>

@@ -23,7 +23,7 @@ export default function StoriesPage() {
 
   return (
     <Page>
-      <section aria-labelledby="stories-title" className="bg-porcelain pb-[var(--section)] pt-[calc(var(--header-h)+clamp(3rem,9vw,8rem))]">
+      <section aria-labelledby="stories-title" className="bg-porcelain pb-[var(--section-tight)] pt-[calc(var(--header-h)+clamp(3rem,9vw,8rem))]">
         <div className="frame">
           <div className="editorial-grid items-end gap-y-10 pb-[var(--section-tight)]">
             <div className="col-span-12 lg:col-span-8">
@@ -76,7 +76,7 @@ export default function StoriesPage() {
         </div>
       </section>
 
-      <Invitation />
+      <Invitation divided />
     </Page>
   );
 }
