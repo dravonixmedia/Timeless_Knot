@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import type { CategoryGallery, GalleryCategory } from "@/content/media";
 import { categoryFromParam, PORTFOLIO_CATEGORY_PARAM } from "@/lib/portfolio";
@@ -19,7 +19,7 @@ import { reveal } from "@/components/ui/Typography";
  */
 export function PortfolioGallery({ galleries }: { galleries: CategoryGallery[] }) {
   return (
-    <Suspense fallback={<GalleryView galleries={galleries} active="all" />}>
+    <Suspense fallback={<StaticGallery galleries={galleries} />}>
       <UrlPortfolioGallery galleries={galleries} />
     </Suspense>
   );
@@ -27,6 +27,8 @@ export function PortfolioGallery({ galleries }: { galleries: CategoryGallery[] }
 
 function UrlPortfolioGallery({ galleries }: { galleries: CategoryGallery[] }) {
   const params = useSearchParams();
+  // The live gallery owns the selection from here on; drop the pre-paint marker.
+  useEffect(() => document.documentElement.removeAttribute("data-portfolio"), []);
   const requested = categoryFromParam(params.get(PORTFOLIO_CATEGORY_PARAM));
   // A category without photographs falls back to All rather than an empty grid.
   const active = requested !== "all" && galleries.some((g) => g.key === requested) ? requested : "all";
@@ -44,56 +46,109 @@ function UrlPortfolioGallery({ galleries }: { galleries: CategoryGallery[] }) {
   return <GalleryView galleries={galleries} active={active} onSelect={select} />;
 }
 
+type Active = GalleryCategory | "all";
+const SIZES = "(min-width: 1024px) 31vw, (min-width: 640px) 47vw, 100vw";
+
+/** Every photograph, tagged with its category (used to filter the static HTML before hydration). */
+const allImages = (galleries: CategoryGallery[]) => galleries.flatMap((g) => g.images.map((image) => ({ image, category: g.key })));
+
 function GalleryView({
   galleries,
   active,
   onSelect,
 }: {
   galleries: CategoryGallery[];
-  active: GalleryCategory | "all";
-  onSelect?: (category: GalleryCategory | "all") => void;
+  active: Active;
+  onSelect?: (category: Active) => void;
 }) {
-  const showFilters = galleries.length > 1;
-  const images =
-    active === "all"
-      ? galleries.flatMap((g) => g.images)
-      : (galleries.find((g) => g.key === active)?.images ?? []);
-
+  const images = allImages(galleries).filter((item) => active === "all" || item.category === active);
   return (
     <div>
-      {showFilters && (
-        <div className="flex flex-col gap-6 border-y border-charcoal/12 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div role="group" aria-label="Filter photographs by category" className="-mx-2 flex flex-wrap gap-x-2 gap-y-1">
-            {([{ key: "all", title: "All" }, ...galleries] as const).map((option) => {
-              const selected = active === option.key;
-              return (
-                <button
-                  key={option.key}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => onSelect?.(option.key)}
-                  className={`meta min-h-11 px-2 text-[0.64rem] tracking-[0.2em] transition-colors duration-500 ${
-                    selected ? "text-charcoal" : "text-muted hover:text-charcoal"
-                  }`}
-                >
-                  <span className={selected ? "border-b border-current pb-1" : "link-draw"}>{option.title}</span>
-                </button>
-              );
-            })}
-          </div>
-          <p className="meta text-[0.62rem] text-muted" aria-live="polite">
-            {images.length} {images.length === 1 ? "photograph" : "photographs"}
-          </p>
-        </div>
-      )}
+      {galleries.length > 1 && <FilterBar galleries={galleries} active={active} count={images.length} onSelect={onSelect} />}
+      <Grid key={active} items={images} />
+    </div>
+  );
+}
 
-      <div key={active} className="mt-12 columns-1 gap-5 sm:columns-2 sm:gap-6 lg:mt-16 lg:columns-3 lg:gap-8">
-        {images.map((image, i) => (
-          <figure key={image.src} className="mb-5 break-inside-avoid sm:mb-6 lg:mb-8" {...reveal("mask", (i % 3) * 0.08)}>
-            <Picture media={image} sizes="(min-width: 1024px) 31vw, (min-width: 640px) 47vw, 100vw" />
-          </figure>
+/**
+ * The prerendered HTML (Suspense fallback). It cannot know the URL's category,
+ * so it carries the filter bar in each state plus every photograph, and the
+ * <head> boot script (portfolioBootScript) marks <html data-portfolio="…"> before
+ * first paint; CSS in globals.css then shows the matching bar and photographs.
+ * Nothing here is mutated by script, and hydration replaces it with GalleryView,
+ * which renders the same result — so there is no flash and no mismatch.
+ */
+function StaticGallery({ galleries }: { galleries: CategoryGallery[] }) {
+  const items = allImages(galleries);
+  const options: Active[] = ["all", ...galleries.map((g) => g.key)];
+  return (
+    <div data-portfolio-fallback="">
+      {galleries.length > 1 &&
+        options.map((option) => (
+          <div key={option} data-portfolio-variant={option}>
+            <FilterBar
+              galleries={galleries}
+              active={option}
+              count={option === "all" ? items.length : items.filter((item) => item.category === option).length}
+            />
+          </div>
         ))}
+      <Grid items={items} />
+    </div>
+  );
+}
+
+function FilterBar({
+  galleries,
+  active,
+  count,
+  onSelect,
+}: {
+  galleries: CategoryGallery[];
+  active: Active;
+  count: number;
+  onSelect?: (category: Active) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-6 border-y border-charcoal/12 py-5 sm:flex-row sm:items-center sm:justify-between">
+      <div role="group" aria-label="Filter photographs by category" className="-mx-2 flex flex-wrap gap-x-2 gap-y-1">
+        {([{ key: "all", title: "All" }, ...galleries] as const).map((option) => {
+          const selected = active === option.key;
+          return (
+            <button
+              key={option.key}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => onSelect?.(option.key)}
+              className={`meta min-h-11 px-2 text-[0.64rem] tracking-[0.2em] transition-colors duration-500 ${
+                selected ? "text-charcoal" : "text-muted hover:text-charcoal"
+              }`}
+            >
+              <span className={selected ? "border-b border-current pb-1" : "link-draw"}>{option.title}</span>
+            </button>
+          );
+        })}
       </div>
+      <p className="meta text-[0.62rem] text-muted" aria-live="polite">
+        {count} {count === 1 ? "photograph" : "photographs"}
+      </p>
+    </div>
+  );
+}
+
+function Grid({ items }: { items: { image: CategoryGallery["images"][number]; category: GalleryCategory }[] }) {
+  return (
+    <div className="mt-12 columns-1 gap-5 sm:columns-2 sm:gap-6 lg:mt-16 lg:columns-3 lg:gap-8">
+      {items.map(({ image, category }, i) => (
+        <figure
+          key={image.src}
+          data-category={category}
+          className="mb-5 break-inside-avoid sm:mb-6 lg:mb-8"
+          {...reveal("mask", (i % 3) * 0.08)}
+        >
+          <Picture media={image} sizes={SIZES} />
+        </figure>
+      ))}
     </div>
   );
 }
