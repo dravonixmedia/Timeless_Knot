@@ -40,19 +40,18 @@ export function MobileMenu({ open, pathname, onClose, onNavigate }: Props) {
       }
       if (event.key !== "Tab" || !panel.current) return;
       // Contain focus within the menu and its toggle (which lives in the header).
+      // The toggle is not next to the links in the page, so the browser's own Tab
+      // order would leave the menu: every Tab moves focus here instead. The
+      // list is gathered on each press, so it follows the menu's current links.
+      event.preventDefault();
       const toggle = document.querySelector<HTMLElement>('[aria-controls="mobile-menu"]');
-      const items = [
-        ...Array.from(panel.current.querySelectorAll<HTMLElement>("a[href]")),
-        ...(toggle ? [toggle] : []),
-      ];
+      const items = [...Array.from(panel.current.querySelectorAll<HTMLElement>("a[href]")), ...(toggle ? [toggle] : [])].filter(
+        (el) => !el.closest("[inert]") && el.getClientRects().length > 0,
+      );
+      if (!items.length) return;
       const index = items.indexOf(document.activeElement as HTMLElement);
-      if (event.shiftKey && index <= 0) {
-        event.preventDefault();
-        items[items.length - 1]?.focus();
-      } else if (!event.shiftKey && index === items.length - 1) {
-        event.preventDefault();
-        items[0]?.focus();
-      }
+      const next = index === -1 ? (event.shiftKey ? items.length - 1 : 0) : (index + (event.shiftKey ? -1 : 1) + items.length) % items.length;
+      items[next].focus();
     };
 
     document.addEventListener("keydown", onKey);
