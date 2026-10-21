@@ -6,14 +6,13 @@ import { PortfolioGallery } from "@/components/stories/PortfolioGallery";
 import { getCategoryGalleries } from "@/content/media";
 import { Invitation } from "@/components/sections/Invitation";
 import { Eyebrow, Lines, reveal } from "@/components/ui/Typography";
-import { pageMetadata } from "@/lib/seo";
+import { JsonLd, pageMetadata, pageSchema } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Wedding Stories",
-  description:
-    "Wedding stories by Timeless Knot — photography and cinematic films that preserve the emotion, traditions and individuality of each celebration.",
-  path: "/stories",
-});
+const title = "Timeless Stories | Wedding Photography Portfolio in Kerala";
+const description =
+  "Explore Timeless Stories by Timeless Knot, featuring wedding, pre-wedding, couple and creative photography from our curated collection.";
+
+export const metadata: Metadata = pageMetadata({ title, description, path: "/stories" });
 
 export default function StoriesPage() {
   const stories = getStories();
@@ -23,25 +22,37 @@ export default function StoriesPage() {
 
   return (
     <Page>
+      <JsonLd
+        data={pageSchema({
+          path: "/stories",
+          name: title,
+          description,
+          type: "CollectionPage",
+          breadcrumbs: [
+            { name: "Home", path: "/" },
+            { name: "Timeless Stories", path: "/stories" },
+          ],
+        })}
+      />
       <section aria-labelledby="stories-title" className="bg-porcelain pb-[var(--section-tight)] pt-[calc(var(--header-h)+clamp(3rem,9vw,8rem))]">
         <div className="frame">
           <div className="editorial-grid items-end gap-y-10 pb-[var(--section-tight)]">
             <div className="col-span-12 lg:col-span-8">
               <p className="eyebrow intro-fade mb-10 flex items-center gap-4 text-muted" style={{ ["--delay" as string]: "0.1s" }}>
                 <span aria-hidden="true" className="h-px w-8 bg-current opacity-50" />
-                Wedding Stories
+                The Portfolio
               </p>
               <Lines
                 as="h1"
                 id="stories-title"
                 mode="intro"
                 className="display-xl"
-                lines={["Love,", <em key="b">Beautifully Lived.</em>]}
+                lines={["Timeless", <em key="s">Stories.</em>]}
               />
             </div>
             <div className="col-span-12 sm:col-span-8 lg:col-span-4 lg:pb-4">
               <p className="lede intro-fade text-muted" style={{ ["--delay" as string]: "0.8s" }}>
-                Each story is its own world — its people, its traditions, its light. Step inside.
+                Every moment, a story that lasts forever.
               </p>
             </div>
           </div>
@@ -49,10 +60,10 @@ export default function StoriesPage() {
           {hasPortfolio && (
             <section aria-labelledby="portfolio-title" className="pb-[var(--section-tight)]">
               <div {...reveal("fade")}>
-                <Eyebrow className="text-muted">Portfolio</Eyebrow>
+                <Eyebrow className="text-muted">Photographs</Eyebrow>
               </div>
               <h2 id="portfolio-title" className="sr-only">
-                Portfolio
+                Photographs by category
               </h2>
               <div className="mt-8">
                 <PortfolioGallery galleries={galleries} />

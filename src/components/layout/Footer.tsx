@@ -22,6 +22,7 @@ export function Footer() {
             <p className="mt-10 max-w-[18ch] font-serif text-[clamp(2rem,1.4rem+2.2vw,3.4rem)] font-light italic leading-[1.08] text-pale-sage">
               {site.tagline}
             </p>
+            <p className="mt-8 max-w-[34ch] text-[0.95rem] text-ivory/75">{site.positioning}</p>
           </div>
 
           <nav aria-label="Footer" className="col-span-6 sm:col-span-4 lg:col-span-3">

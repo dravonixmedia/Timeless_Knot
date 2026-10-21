@@ -26,8 +26,10 @@ export function Logo({ className = "" }: { className?: string }) {
  */
 export function Monogram({ className = "", title }: { className?: string; title?: string }) {
   const { monogram } = site.logo;
-  // Fetch the artwork with the document rather than when CSS first applies the mask.
-  preload(monogram, { as: "image", fetchPriority: "high" });
+  // Fetch the artwork with the document rather than when CSS first applies the
+  // mask. CSS masks are fetched in CORS mode, so the preload must be too, or the
+  // browser cannot reuse it and downloads the image twice.
+  preload(monogram, { as: "image", fetchPriority: "high", crossOrigin: "anonymous" });
   const mask = `url("${monogram}") center / contain no-repeat`;
   return (
     <span

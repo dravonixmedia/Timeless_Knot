@@ -7,6 +7,7 @@
  */
 
 import { resolveWhatsappUrl } from "@/lib/whatsapp";
+import { PRODUCTION_ORIGIN } from "@/lib/indexing";
 
 /**
  * WHATSAPP — paste the studio's direct WhatsApp link here, e.g.
@@ -35,16 +36,31 @@ if (!whatsappSource) {
 
 export type NavItem = { label: string; href: string };
 
+/** A state or territory, as named in structured data and copy. */
+export type Region = { name: string; type: "State" };
+
 export type SiteConfig = {
   name: string;
   legalName: string | null;
   tagline: string;
   statement: string;
   description: string;
-  /** Production origin, e.g. https://www.example.com — set NEXT_PUBLIC_SITE_URL. */
+  /** Production origin (src/lib/indexing.ts); NEXT_PUBLIC_SITE_URL may override it. */
   url: string;
-  /** True once a real production URL is configured. */
-  hasProductionUrl: boolean;
+  /**
+   * Confirmed base: city, state and country only. No street address, postcode
+   * or coordinates are published until the studio confirms them.
+   */
+  location: { locality: string; region: string; country: string; countryCode: string };
+  /** One-line geographic positioning, approved by the studio. */
+  positioning: string;
+  /**
+   * Where the studio works. `primary` is its home market; `extended` are the
+   * South Indian states it welcomes enquiries from. No branch or office is
+   * claimed outside Kollam, and no past assignment is implied.
+   */
+  serviceArea: { primary: Region; extended: Region[] };
+  services: { name: string; description: string }[];
   /**
    * Official TK monogram supplied by the client: a single-colour (white)
    * transparent PNG in /public. It is drawn through a CSS mask in the
@@ -76,9 +92,37 @@ export const site: SiteConfig = {
   tagline: "Crafting Memories That Last Beyond Time.",
   statement: "Your Wedding. Our Art.",
   description:
-    "Timeless Knot is a wedding photography and cinematography studio documenting genuine emotion, meaningful traditions and personal celebrations through thoughtful imagery and cinematic storytelling.",
-  url: envUrl || "http://localhost:3000",
-  hasProductionUrl: Boolean(envUrl),
+    "Timeless Knot is a Kollam-based wedding photography and cinematography studio capturing weddings, pre-weddings and love stories across Kerala and South India.",
+  url: envUrl || PRODUCTION_ORIGIN,
+  location: { locality: "Kollam", region: "Kerala", country: "India", countryCode: "IN" },
+  positioning: "Based in Kollam, Kerala. Capturing meaningful stories across South India.",
+  serviceArea: {
+    primary: { name: "Kerala", type: "State" },
+    extended: [
+      { name: "Tamil Nadu", type: "State" },
+      { name: "Karnataka", type: "State" },
+      { name: "Andhra Pradesh", type: "State" },
+      { name: "Telangana", type: "State" },
+    ],
+  },
+  services: [
+    {
+      name: "Wedding Photography",
+      description: "Candid and editorial photographs of the ceremony, its rituals and the people who make it yours.",
+    },
+    {
+      name: "Wedding Cinematography",
+      description: "Cinematic wedding films that hold the movement, the sound and the feeling of the day.",
+    },
+    {
+      name: "Pre-Wedding Photography",
+      description: "An unhurried session before the wedding, shaped around the two of you and the places you love.",
+    },
+    {
+      name: "Couple Photography",
+      description: "Portraits for couples at any chapter of their story — together, simply as you are.",
+    },
+  ],
   logo: { monogram: "/brand/tk-monogram-white.png", width: 514, height: 542 },
   contact: {
     email: null,
@@ -94,7 +138,7 @@ export const site: SiteConfig = {
   },
   nav: [
     { label: "Our Story", href: "/our-story" },
-    { label: "Wedding Stories", href: "/stories" },
+    { label: "Timeless Stories", href: "/stories" },
     { label: "The Experience", href: "/experience" },
     { label: "Contact", href: "/contact" },
   ],

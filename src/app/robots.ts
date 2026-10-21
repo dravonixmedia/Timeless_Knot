@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
-import { absoluteUrl, site } from "@/config/site";
+import { absoluteUrl } from "@/config/site";
 
+/*
+ * Production rules. Preview and workers.dev hosts are kept out of search
+ * engines by the Worker's `X-Robots-Tag: noindex` header (custom-worker.ts),
+ * which lets crawlers see that directive instead of being blocked from it.
+ */
 export default function robots(): MetadataRoute.Robots {
-  // Until a production URL is configured, keep previews out of search engines.
-  if (!site.hasProductionUrl) {
-    return { rules: { userAgent: "*", disallow: "/" } };
-  }
   return {
     rules: { userAgent: "*", allow: "/", disallow: "/api/" },
     sitemap: absoluteUrl("/sitemap.xml"),

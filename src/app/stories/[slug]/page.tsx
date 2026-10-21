@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ViewTransition } from "react";
+import { site } from "@/config/site";
 import { getNextStory, getStories, getStory } from "@/content/stories";
 import { Page } from "@/components/layout/Page";
 import { Picture } from "@/components/media/Picture";
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: PageProps<"/stories/[slug]">)
   const story = getStory(slug);
   if (!story) return {};
   return pageMetadata({
-    title: story.seo?.title ?? (story.couple ? `${story.couple} — ${story.title}` : story.title),
+    title: story.seo?.title ?? `${story.couple ? `${story.couple} — ${story.title}` : story.title} | ${site.name}`,
     description: story.seo?.description ?? story.excerpt,
     path: `/stories/${story.slug}`,
   });
@@ -55,7 +56,7 @@ export default async function StoryPage({ params }: PageProps<"/stories/[slug]">
       <JsonLd
         data={breadcrumbSchema([
           { name: "Home", path: "/" },
-          { name: "Wedding Stories", path: "/stories" },
+          { name: "Timeless Stories", path: "/stories" },
           { name: story.title, path: `/stories/${story.slug}` },
         ])}
       />
@@ -79,7 +80,7 @@ export default async function StoryPage({ params }: PageProps<"/stories/[slug]">
             <ol className="meta flex flex-wrap items-center gap-3 text-[0.6rem] text-ivory/80">
               <li>
                 <Link href="/stories" className="link-draw">
-                  Wedding Stories
+                  Timeless Stories
                 </Link>
               </li>
               <li aria-hidden="true">/</li>

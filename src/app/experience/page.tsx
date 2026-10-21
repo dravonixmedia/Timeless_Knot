@@ -6,14 +6,15 @@ import { Picture } from "@/components/media/Picture";
 import { Gallery } from "@/components/stories/Gallery";
 import { Invitation } from "@/components/sections/Invitation";
 import { Eyebrow, Lines, reveal } from "@/components/ui/Typography";
-import { pageMetadata } from "@/lib/seo";
+import { site } from "@/config/site";
+import { SectionRule } from "@/components/ui/SectionRule";
+import { JsonLd, pageMetadata, pageSchema, servicesSchema } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "The Experience",
-  description:
-    "How Timeless Knot works with couples — from the first conversation and creative preparation to wedding-day storytelling, post-production and the delivery of your memories.",
-  path: "/experience",
-});
+const title = "Wedding Photography Experience | Timeless Knot Kerala";
+const description =
+  "Discover the Timeless Knot approach to wedding photography and cinematography, from meaningful moments to thoughtfully crafted visual stories.";
+
+export const metadata: Metadata = pageMetadata({ title, description, path: "/experience" });
 
 /*
  * Stages describe the approach only. Package inclusions, turnaround times and
@@ -52,6 +53,18 @@ export default function ExperiencePage() {
 
   return (
     <Page>
+      <JsonLd
+        data={pageSchema({
+          path: "/experience",
+          name: title,
+          description,
+          breadcrumbs: [
+            { name: "Home", path: "/" },
+            { name: "The Experience", path: "/experience" },
+          ],
+          extra: servicesSchema(),
+        })}
+      />
       {/* Hero */}
       <section aria-labelledby="experience-title" className="bg-porcelain pt-[calc(var(--header-h)+clamp(3rem,9vw,8rem))]">
         <div className="frame pb-[var(--section-tight)]">
@@ -120,6 +133,30 @@ export default function ExperiencePage() {
           </div>
         </section>
       </div>
+
+      {/* What we capture — the services, as described in the structured data */}
+      <section aria-labelledby="services-title" className="bg-porcelain pb-[var(--section)]">
+        <SectionRule className="mb-[var(--section-tight)]" />
+        <div className="frame editorial-grid gap-y-14">
+          <div className="col-span-12 self-start lg:col-span-4">
+            <div {...reveal("fade")}>
+              <Eyebrow className="text-muted">What We Capture</Eyebrow>
+            </div>
+            <Lines id="services-title" className="display-lg mt-10" lines={["Photographs", <em key="f">and Films.</em>]} />
+            <p className="body-lg mt-8 max-w-[36ch] text-muted" {...reveal("up", 0.15)}>
+              Based in Kollam, we work across Kerala and welcome assignments throughout South India.
+            </p>
+          </div>
+          <ul className="col-span-12 grid gap-x-12 sm:grid-cols-2 lg:col-span-7 lg:col-start-6">
+            {site.services.map((service) => (
+              <li key={service.name} className="border-t border-charcoal/12 py-10 lg:py-12" {...reveal("up")}>
+                <h3 className="display-sm">{service.name}</h3>
+                <p className="mt-4 max-w-[40ch] text-muted">{service.description}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
       {/* Editorial pairing */}
       <section aria-labelledby="keep-title" className="bg-pale-sage section-y">

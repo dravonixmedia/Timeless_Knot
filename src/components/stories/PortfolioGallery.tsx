@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useLayoutEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import type { CategoryGallery, GalleryCategory } from "@/content/media";
 import { categoryFromParam, PORTFOLIO_CATEGORY_PARAM } from "@/lib/portfolio";
@@ -14,26 +14,47 @@ import { reveal } from "@/components/ui/Typography";
  *
  * The selected category is kept in the URL (/stories?category=weddings), so it
  * survives refresh, back/forward and shared links. The page stays statically
- * prerendered: its HTML shows every photograph (the Suspense fallback) and the
- * URL's category is applied in the browser.
+ * prerendered: its HTML holds every photograph once, and the selection is shown
+ * by CSS keyed on <html data-portfolio="…"> (globals.css). The <head> boot
+ * script sets that attribute before first paint; the filter bar keeps it in
+ * step afterwards. The grid itself is never re-rendered by the filter, so
+ * hydration does not replace the photographs (no second reveal, no reload).
  */
 export function PortfolioGallery({ galleries }: { galleries: CategoryGallery[] }) {
+  const items = allImages(galleries);
   return (
-    <Suspense fallback={<StaticGallery galleries={galleries} />}>
-      <UrlPortfolioGallery galleries={galleries} />
-    </Suspense>
+    <div>
+      {galleries.length > 1 && (
+        <Suspense fallback={<StaticFilterBars galleries={galleries} />}>
+          <UrlFilterBar galleries={galleries} />
+        </Suspense>
+      )}
+      <Grid items={items} />
+    </div>
   );
 }
 
-function UrlPortfolioGallery({ galleries }: { galleries: CategoryGallery[] }) {
+function UrlFilterBar({ galleries }: { galleries: CategoryGallery[] }) {
   const params = useSearchParams();
-  // The live gallery owns the selection from here on; drop the pre-paint marker.
-  useEffect(() => document.documentElement.removeAttribute("data-portfolio"), []);
   const requested = categoryFromParam(params.get(PORTFOLIO_CATEGORY_PARAM));
   // A category without photographs falls back to All rather than an empty grid.
   const active = requested !== "all" && galleries.some((g) => g.key === requested) ? requested : "all";
+  const shown = useRef<Active | null>(null);
 
-  const select = (category: GalleryCategory | "all") => {
+  // Show the selection before paint, and replay the photographs' reveal when it
+  // changes (as if the grid were new) — the reveal observer re-watches them.
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    if (active === "all") root.removeAttribute("data-portfolio");
+    else root.setAttribute("data-portfolio", active);
+    if (shown.current !== null && shown.current !== active) {
+      document.querySelectorAll("[data-portfolio-grid] figure[data-inview]").forEach((f) => f.removeAttribute("data-inview"));
+    }
+    shown.current = active;
+  }, [active]);
+  useLayoutEffect(() => () => document.documentElement.removeAttribute("data-portfolio"), []);
+
+  const select = (category: Active) => {
     const next = new URLSearchParams(params.toString());
     if (category === "all") next.delete(PORTFOLIO_CATEGORY_PARAM);
     else next.set(PORTFOLIO_CATEGORY_PARAM, category);
@@ -43,57 +64,33 @@ function UrlPortfolioGallery({ galleries }: { galleries: CategoryGallery[] }) {
     window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
   };
 
-  return <GalleryView galleries={galleries} active={active} onSelect={select} />;
+  return <FilterBar galleries={galleries} active={active} count={countFor(galleries, active)} onSelect={select} />;
 }
 
 type Active = GalleryCategory | "all";
 const SIZES = "(min-width: 1024px) 31vw, (min-width: 640px) 47vw, 100vw";
 
-/** Every photograph, tagged with its category (used to filter the static HTML before hydration). */
+/** Every photograph, tagged with its category (the grid filters by it in CSS). */
 const allImages = (galleries: CategoryGallery[]) => galleries.flatMap((g) => g.images.map((image) => ({ image, category: g.key })));
 
-function GalleryView({
-  galleries,
-  active,
-  onSelect,
-}: {
-  galleries: CategoryGallery[];
-  active: Active;
-  onSelect?: (category: Active) => void;
-}) {
-  const images = allImages(galleries).filter((item) => active === "all" || item.category === active);
-  return (
-    <div>
-      {galleries.length > 1 && <FilterBar galleries={galleries} active={active} count={images.length} onSelect={onSelect} />}
-      <Grid key={active} items={images} />
-    </div>
-  );
-}
+const countFor = (galleries: CategoryGallery[], active: Active) =>
+  galleries.reduce((n, g) => n + (active === "all" || g.key === active ? g.images.length : 0), 0);
 
 /**
- * The prerendered HTML (Suspense fallback). It cannot know the URL's category,
- * so it carries the filter bar in each state plus every photograph, and the
- * <head> boot script (portfolioBootScript) marks <html data-portfolio="…"> before
- * first paint; CSS in globals.css then shows the matching bar and photographs.
- * Nothing here is mutated by script, and hydration replaces it with GalleryView,
- * which renders the same result — so there is no flash and no mismatch.
+ * The prerendered filter bar (Suspense fallback). It cannot know the URL's
+ * category, so it carries the bar in each state; CSS shows the one matching
+ * <html data-portfolio> on first paint, and hydration swaps in the live bar,
+ * which looks identical — so there is no flash and no mismatch.
  */
-function StaticGallery({ galleries }: { galleries: CategoryGallery[] }) {
-  const items = allImages(galleries);
+function StaticFilterBars({ galleries }: { galleries: CategoryGallery[] }) {
   const options: Active[] = ["all", ...galleries.map((g) => g.key)];
   return (
     <div data-portfolio-fallback="">
-      {galleries.length > 1 &&
-        options.map((option) => (
-          <div key={option} data-portfolio-variant={option}>
-            <FilterBar
-              galleries={galleries}
-              active={option}
-              count={option === "all" ? items.length : items.filter((item) => item.category === option).length}
-            />
-          </div>
-        ))}
-      <Grid items={items} />
+      {options.map((option) => (
+        <div key={option} data-portfolio-variant={option}>
+          <FilterBar galleries={galleries} active={option} count={countFor(galleries, option)} />
+        </div>
+      ))}
     </div>
   );
 }
@@ -112,7 +109,7 @@ function FilterBar({
   return (
     <div className="flex flex-col gap-6 border-y border-charcoal/12 py-5 sm:flex-row sm:items-center sm:justify-between">
       <div role="group" aria-label="Filter photographs by category" className="-mx-2 flex flex-wrap gap-x-2 gap-y-1">
-        {([{ key: "all", title: "All" }, ...galleries] as const).map((option) => {
+        {([{ key: "all", title: "All Stories" }, ...galleries] as const).map((option) => {
           const selected = active === option.key;
           return (
             <button
@@ -138,7 +135,7 @@ function FilterBar({
 
 function Grid({ items }: { items: { image: CategoryGallery["images"][number]; category: GalleryCategory }[] }) {
   return (
-    <div className="mt-12 columns-1 gap-5 sm:columns-2 sm:gap-6 lg:mt-16 lg:columns-3 lg:gap-8">
+    <div data-portfolio-grid="" className="mt-12 columns-1 gap-5 sm:columns-2 sm:gap-6 lg:mt-16 lg:columns-3 lg:gap-8">
       {items.map(({ image, category }, i) => (
         <figure
           key={image.src}

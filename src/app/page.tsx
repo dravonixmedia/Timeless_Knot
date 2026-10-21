@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { site } from "@/config/site";
 import { imagery, showreel } from "@/content/imagery";
 import { getCategoryGalleries, getHomeVideo } from "@/content/media";
 import type { Media } from "@/content/types";
@@ -15,10 +17,16 @@ import { Invitation } from "@/components/sections/Invitation";
 import { ArrowLink, ButtonLink } from "@/components/ui/Links";
 import { Eyebrow, Lines, reveal } from "@/components/ui/Typography";
 import { SectionRule } from "@/components/ui/SectionRule";
+import { JsonLd, pageMetadata, pageSchema } from "@/lib/seo";
+
+const title = "Timeless Knot | Wedding Photography & Films in Kerala & South India";
+
+export const metadata: Metadata = pageMetadata({ title, description: site.description, path: "/" });
 
 export default function HomePage() {
   return (
     <Page>
+      <JsonLd data={pageSchema({ path: "/", name: title, description: site.description })} />
       <Hero />
       <ArtOfRemembering />
       <FeaturedStories />
@@ -76,7 +84,7 @@ function Hero() {
             </p>
             <div className="intro-fade mt-8 flex flex-col items-start gap-3" style={{ ["--delay" as string]: "1.25s" }}>
               <ButtonLink href="/stories" variant="light">
-                Explore our stories
+                Explore Timeless Stories
               </ButtonLink>
               <ArrowLink href="/contact" className="text-ivory">
                 Let&rsquo;s connect
@@ -119,6 +127,10 @@ function ArtOfRemembering() {
               At Timeless Knot, we believe the most beautiful moments are the ones that feel entirely your own. Through
               thoughtful imagery and cinematic storytelling, we preserve the emotions, connections, and details that make
               your story unforgettable.
+            </p>
+            <p className="body-lg mt-6 text-muted">
+              Based in Kollam, Kerala, we photograph and film weddings, pre-weddings and love stories across Kerala and
+              South India.
             </p>
             <ArrowLink href="/our-story" className="mt-10">
               Our story
@@ -195,7 +207,7 @@ function FeaturedStories() {
             );
           })}
           <div className="col-span-12 flex items-end lg:col-span-4 lg:col-start-9 lg:justify-end" {...reveal("up")}>
-            <ButtonLink href="/stories">View all stories</ButtonLink>
+            <ButtonLink href="/stories">View all Timeless Stories</ButtonLink>
           </div>
         </div>
       </div>
@@ -234,11 +246,12 @@ function PortfolioHighlights() {
       <div className="frame">
         <SectionRule contained={false} />
         <div className="editorial-grid items-end gap-y-8 pt-[var(--section-tight)]">
-          <Lines
-            id="portfolio-title"
-            className="display-lg col-span-12 lg:col-span-7"
-            lines={["Moments Worth", <em key="r">Remembering.</em>]}
-          />
+          <div className="col-span-12 lg:col-span-7">
+            <div {...reveal("fade")}>
+              <Eyebrow className="text-muted">Timeless Stories</Eyebrow>
+            </div>
+            <Lines id="portfolio-title" className="display-lg mt-10" lines={["Moments Worth", <em key="r">Remembering.</em>]} />
+          </div>
           <p className="lede col-span-12 italic text-muted sm:col-span-6 lg:col-span-4 lg:col-start-9 lg:pb-3" {...reveal("up", 0.2)}>
             A collection of love, beautifully lived.
           </p>
@@ -266,7 +279,7 @@ function PortfolioHighlights() {
           ))}
         </ul>
         <div className="mt-14 flex lg:mt-16 lg:justify-end" {...reveal("up")}>
-          <ButtonLink href="/stories">View the portfolio</ButtonLink>
+          <ButtonLink href="/stories">Explore Timeless Stories</ButtonLink>
         </div>
       </div>
     </section>

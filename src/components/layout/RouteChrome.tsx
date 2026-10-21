@@ -2,8 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { refreshLenis } from "@/lib/scroll";
+import { refreshLenis, refreshScrollTriggers } from "@/lib/scroll";
 import { Header } from "./Header";
 
 /**
@@ -17,7 +16,7 @@ export function RouteChrome() {
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       refreshLenis();
-      ScrollTrigger.refresh();
+      refreshScrollTriggers();
     });
     return () => cancelAnimationFrame(frame);
   }, [pathname]);

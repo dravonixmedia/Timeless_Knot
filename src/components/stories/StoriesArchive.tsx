@@ -93,7 +93,7 @@ export function EmptyArchive({ filtered = false }: { filtered?: boolean }) {
       <p className="mt-6 text-muted">
         {filtered
           ? "Please choose another collection, or come back soon."
-          : "Our wedding stories will be shared here very soon. In the meantime, we would love to hear yours."}
+          : "Timeless Stories will be shared here very soon. In the meantime, we would love to hear yours."}
       </p>
       <ArrowLink href="/contact" className="mt-10">
         Tell us your story

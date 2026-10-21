@@ -8,7 +8,7 @@ import { Footer } from "@/components/layout/Footer";
 import { WhatsAppButton } from "@/components/contact/WhatsAppButton";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { RevealObserver } from "@/components/motion/RevealObserver";
-import { JsonLd, organizationSchema } from "@/lib/seo";
+import { JsonLd, siteSchema } from "@/lib/seo";
 import { getCategoryGalleries } from "@/content/media";
 import { portfolioBootScript } from "@/lib/portfolio";
 import "./globals.css";
@@ -27,25 +27,30 @@ const manrope = Manrope({
   display: "swap",
 });
 
+/**
+ * Site-wide defaults. Each page sets its own title, description and canonical
+ * URL (src/lib/seo.tsx → pageMetadata), so no canonical is inherited here: a
+ * page without one (such as the 404 page) must not point search engines at /.
+ * Pages are indexable in the HTML; the Worker adds `X-Robots-Tag: noindex` on
+ * every host except production (custom-worker.ts, src/lib/indexing.ts).
+ */
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: `${site.name} — Wedding Photography & Cinematography`,
-    template: `%s — ${site.name}`,
+    default: `${site.name} | Wedding Photography & Films in Kerala & South India`,
+    template: `%s | ${site.name}`,
   },
   description: site.description,
   applicationName: site.name,
-  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName: site.name,
-    title: `${site.name} — Wedding Photography & Cinematography`,
+    title: `${site.name} | Wedding Photography & Films in Kerala & South India`,
     description: site.description,
-    url: "/",
-    locale: "en",
+    locale: "en_IN",
   },
   twitter: { card: "summary_large_image" },
-  robots: site.hasProductionUrl ? { index: true, follow: true } : { index: false, follow: false },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
@@ -65,13 +70,13 @@ const portfolioBoot = portfolioBootScript(getCategoryGalleries().map((g) => g.ke
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${manrope.variable}`} suppressHydrationWarning>
+    <html lang="en-IN" className={`${cormorant.variable} ${manrope.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
         <script dangerouslySetInnerHTML={{ __html: portfolioBoot }} />
       </head>
       <body>
-        <JsonLd data={organizationSchema()} />
+        <JsonLd data={siteSchema()} />
         <Suspense fallback={<Header pathname={null} />}>
           <RouteChrome />
         </Suspense>

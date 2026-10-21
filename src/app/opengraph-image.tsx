@@ -1,8 +1,9 @@
 import { ImageResponse } from "next/og";
 import { site } from "@/config/site";
+import { shareImage } from "@/lib/seo";
 
-export const alt = `${site.name} — Wedding Photography & Cinematography`;
-export const size = { width: 1200, height: 630 };
+export const alt = shareImage.alt;
+export const size = { width: shareImage.width, height: shareImage.height };
 export const contentType = "image/png";
 
 /** Typographic share card in the brand palette, used until real photography exists. */
@@ -22,11 +23,12 @@ export default function OpengraphImage() {
         }}
       >
         <div style={{ display: "flex", fontSize: 22, letterSpacing: 10, color: "#98ad9b" }}>
-          WEDDING PHOTOGRAPHY &amp; CINEMATOGRAPHY
+          WEDDING PHOTOGRAPHY &amp; CINEMATOGRAPHY · KERALA
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ fontSize: 92, letterSpacing: 18, lineHeight: 1 }}>TIMELESS KNOT</div>
           <div style={{ marginTop: 28, fontSize: 34, color: "#e5ebe3" }}>{site.tagline}</div>
+          <div style={{ marginTop: 18, fontSize: 24, color: "#98ad9b" }}>{site.positioning}</div>
         </div>
         <div style={{ display: "flex", height: 1, background: "rgba(229,235,227,0.3)" }} />
       </div>

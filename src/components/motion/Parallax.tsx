@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
+import { loadMotion } from "@/lib/scroll";
 
 type ParallaxProps = {
   children: ReactNode;
@@ -18,7 +15,9 @@ type ParallaxProps = {
 /**
  * Restrained scroll-linked drift for large photographs. The inner layer is
  * oversized by `amount` so movement never reveals an edge or distorts the
- * image. Disabled entirely for reduced motion.
+ * image. Disabled entirely for reduced motion. GSAP is loaded after hydration;
+ * until then the layer rests at its centred position, which is exactly where
+ * the scroll-linked drift places it at the top of the page.
  */
 export function Parallax({ children, amount = 10, scaleFrom, className = "" }: ParallaxProps) {
   // Callers may position the frame themselves (e.g. `absolute inset-0` behind a
@@ -29,30 +28,38 @@ export function Parallax({ children, amount = 10, scaleFrom, className = "" }: P
 
   useEffect(() => {
     if (!outer.current || !inner.current) return;
-    const mm = gsap.matchMedia();
+    let mm: ReturnType<typeof import("gsap").gsap.matchMedia> | undefined;
+    let cancelled = false;
 
-    mm.add("(prefers-reduced-motion: no-preference)", () => {
-      // Travel exactly the oversized margin so no edge is ever exposed.
-      const overhang = () => ((outer.current?.offsetHeight ?? 0) * amount) / 200;
-      gsap.fromTo(
-        inner.current,
-        { y: () => -overhang(), scale: scaleFrom ?? 1 },
-        {
-          y: () => overhang(),
-          scale: 1,
-          ease: "none",
-          scrollTrigger: {
-            trigger: outer.current,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: true,
-            invalidateOnRefresh: true,
+    loadMotion().then(({ gsap }) => {
+      if (cancelled) return;
+      mm = gsap.matchMedia();
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        // Travel exactly the oversized margin so no edge is ever exposed.
+        const overhang = () => ((outer.current?.offsetHeight ?? 0) * amount) / 200;
+        gsap.fromTo(
+          inner.current,
+          { y: () => -overhang(), scale: scaleFrom ?? 1 },
+          {
+            y: () => overhang(),
+            scale: 1,
+            ease: "none",
+            scrollTrigger: {
+              trigger: outer.current,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: true,
+              invalidateOnRefresh: true,
+            },
           },
-        },
-      );
-    });
+        );
+      });
+    }, () => {});
 
-    return () => mm.revert();
+    return () => {
+      cancelled = true;
+      mm?.revert();
+    };
   }, [amount, scaleFrom]);
 
   return (

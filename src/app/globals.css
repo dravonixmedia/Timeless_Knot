@@ -528,12 +528,13 @@ body:has([data-floating-cta]) .scroll-cue-wrap {
 }
 
 /* ==========================================================================
-   PORTFOLIO — category from the URL before hydration
-   /stories is prerendered with every photograph and a filter bar per state
-   (StaticGallery). The <head> boot script sets <html data-portfolio="…"> for a
-   valid ?category=, and these rules show that state on first paint; hydration
-   then swaps in the live gallery, which looks identical. Keep the category
-   list in step with PORTFOLIO_CATEGORIES (src/lib/portfolio.ts).
+   PORTFOLIO — the selected category, shown by CSS
+   /stories is prerendered with every photograph once and a filter bar per
+   state (StaticFilterBars). <html data-portfolio="…"> holds the selection: the
+   <head> boot script sets it for a valid ?category= before first paint, and
+   the live filter bar updates it. The grid only ever changes through these
+   rules, so hydration never replaces the photographs. Keep the category list
+   in step with PORTFOLIO_CATEGORIES (src/lib/portfolio.ts).
    ========================================================================== */
 
 [data-portfolio-fallback] [data-portfolio-variant]:not([data-portfolio-variant="all"]) {
@@ -551,10 +552,10 @@ body:has([data-floating-cta]) .scroll-cue-wrap {
   display: block;
 }
 
-:root[data-portfolio="weddings"] [data-portfolio-fallback] figure:not([data-category="weddings"]),
-:root[data-portfolio="pre-wedding"] [data-portfolio-fallback] figure:not([data-category="pre-wedding"]),
-:root[data-portfolio="couples"] [data-portfolio-fallback] figure:not([data-category="couples"]),
-:root[data-portfolio="beyond-the-frame"] [data-portfolio-fallback] figure:not([data-category="beyond-the-frame"]) {
+:root[data-portfolio="weddings"] [data-portfolio-grid] figure:not([data-category="weddings"]),
+:root[data-portfolio="pre-wedding"] [data-portfolio-grid] figure:not([data-category="pre-wedding"]),
+:root[data-portfolio="couples"] [data-portfolio-grid] figure:not([data-category="couples"]),
+:root[data-portfolio="beyond-the-frame"] [data-portfolio-grid] figure:not([data-category="beyond-the-frame"]) {
   display: none;
 }
 
