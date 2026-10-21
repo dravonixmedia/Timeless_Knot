@@ -7,7 +7,8 @@
  */
 
 import { resolveWhatsappUrl } from "@/lib/whatsapp";
-import { PRODUCTION_ORIGIN } from "@/lib/indexing";
+import { resolveCanonicalOrigin } from "@/lib/indexing";
+import siteConfig from "@/content/generated/site-config.json";
 
 /**
  * WHATSAPP — paste the studio's direct WhatsApp link here, e.g.
@@ -45,7 +46,11 @@ export type SiteConfig = {
   tagline: string;
   statement: string;
   description: string;
-  /** Production origin (src/lib/indexing.ts); NEXT_PUBLIC_SITE_URL may override it. */
+  /**
+   * Canonical production origin: NEXT_PUBLIC_SITE_URL at build time, else the
+   * current production domain (src/lib/indexing.ts). Every canonical URL,
+   * sitemap entry, Open Graph URL and structured-data id is built from it.
+   */
   url: string;
   /**
    * Confirmed base: city, state and country only. No street address, postcode
@@ -84,8 +89,6 @@ export type SiteConfig = {
   nav: NavItem[];
 };
 
-const envUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-
 export const site: SiteConfig = {
   name: "Timeless Knot",
   legalName: null,
@@ -93,7 +96,7 @@ export const site: SiteConfig = {
   statement: "Your Wedding. Our Art.",
   description:
     "Timeless Knot is a Kollam-based wedding photography and cinematography studio capturing weddings, pre-weddings and love stories across Kerala and South India.",
-  url: envUrl || PRODUCTION_ORIGIN,
+  url: resolveCanonicalOrigin(siteConfig.siteUrl),
   location: { locality: "Kollam", region: "Kerala", country: "India", countryCode: "IN" },
   positioning: "Based in Kollam, Kerala. Capturing meaningful stories across South India.",
   serviceArea: {
