@@ -593,3 +593,74 @@ body:has([data-floating-cta]) .scroll-cue-wrap {
   display: none;
 }
 
+
+/* ==========================================================================
+   LEGAL PAGES — Privacy Policy, Terms & Conditions (components/legal)
+   Long-form reading: a comfortable measure, generous leading, quiet lists.
+   ========================================================================== */
+
+.legal-prose {
+  max-width: 68ch;
+}
+
+.legal-prose p,
+.legal-prose li {
+  font-size: clamp(1rem, 0.96rem + 0.15vw, 1.0625rem);
+  line-height: 1.8;
+}
+
+.legal-prose h3 {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-charcoal);
+  margin-top: 2rem;
+}
+
+.legal-prose ul {
+  display: grid;
+  gap: 0.6rem;
+  padding-left: 1.25rem;
+  list-style: none;
+}
+
+.legal-prose ul > li {
+  position: relative;
+}
+
+.legal-prose ul > li::before {
+  content: "";
+  position: absolute;
+  left: -1.25rem;
+  top: 0.9em;
+  width: 0.55rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+.legal-prose a {
+  color: var(--color-charcoal);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  text-decoration-color: color-mix(in oklab, var(--color-charcoal) 35%, transparent);
+  transition: text-decoration-color var(--dur-hover) var(--ease-editorial);
+}
+
+.legal-prose a:hover,
+.legal-prose a:focus-visible {
+  text-decoration-color: currentColor;
+}
+
+.legal-contents summary {
+  list-style: none;
+}
+
+.legal-contents summary::-webkit-details-marker {
+  display: none;
+}
+
+.legal-contents[open] summary svg {
+  rotate: 180deg;
+}

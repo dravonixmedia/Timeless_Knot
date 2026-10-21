@@ -60,3 +60,17 @@ export const unlockScroll = () => {
 export const refreshLenis = () => {
   instance?.resize();
 };
+
+/**
+ * Glides to an element on the current page (honouring its scroll-margin) when
+ * Lenis is running, and returns true; `onComplete` runs once it arrives.
+ * Returns false otherwise, so the browser's own jump to the anchor applies.
+ */
+export const smoothScrollTo = (target: HTMLElement, onComplete?: () => void) => {
+  if (!instance) return false;
+  // Start from the real position: a native scroll just before (e.g. focusing a
+  // link off-screen) may not have reached Lenis yet.
+  instance.resize();
+  instance.scrollTo(target, { onComplete });
+  return true;
+};

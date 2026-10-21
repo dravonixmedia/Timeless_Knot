@@ -19,7 +19,7 @@ test("without NEXT_PUBLIC_SITE_URL, https://timelessknot.in is canonical", () =>
 
 test("production with the default: timelessknot.in is indexable; old and www hosts redirect; previews are noindex", () => {
   const origin = resolveCanonicalOrigin(undefined);
-  for (const path of ["/", "/our-story", "/stories", "/experience", "/contact", "/sitemap.xml", "/robots.txt"]) {
+  for (const path of ["/", "/our-story", "/stories", "/experience", "/contact", "/privacy-policy", "/terms-and-conditions", "/sitemap.xml", "/robots.txt"]) {
     assert.deepEqual(at(`${NEW}${path}`, origin), { action: "serve", indexable: true }, path);
   }
   assert.deepEqual(at(`${LEGACY}/our-story`, origin), { action: "redirect", location: `${NEW}/our-story` });
@@ -87,5 +87,5 @@ test("the sitemap lists exactly the site's static public pages, from the real ro
   const source = readFileSync(new URL("sitemap.ts", app), "utf8");
   const listed = JSON.parse(source.match(/PUBLIC_PAGES = (\[[^\]]*\])/)[1].replace(/'/g, '"'));
   assert.deepEqual([...listed].sort(), [...routes].sort());
-  assert.deepEqual([...listed].sort(), ["/", "/contact", "/experience", "/our-story", "/stories"]);
+  assert.deepEqual([...listed].sort(), ["/", "/contact", "/experience", "/our-story", "/privacy-policy", "/stories", "/terms-and-conditions"]);
 });
