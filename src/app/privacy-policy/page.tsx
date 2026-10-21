@@ -49,7 +49,7 @@ const sections: LegalSection[] = [
           information that identifies you or could reasonably be used to identify you.
         </p>
         <p>
-          If you book our services, the photographs, films and details involved in that booking are also covered by the
+          If you book our services, the photographs, films and details involved in that booking may also be covered by any
           agreement we make with you.
         </p>
       </>
@@ -97,8 +97,6 @@ const sections: LegalSection[] = [
           <li>run the website, keep it secure and fix technical problems;</li>
           <li>meet our legal obligations and protect our legal rights.</li>
         </ul>
-        {/* REVIEW: confirm with the studio — a business commitment, not something the code shows. */}
-        <p>We do not sell your personal information, and we do not use it for third-party advertising.</p>
       </>
     ),
   },
@@ -141,7 +139,7 @@ const sections: LegalSection[] = [
           This website does not set cookies of its own and does not use analytics, advertising or social-media tracking
           tools. Our fonts are served from this website rather than from a third-party font service.
         </p>
-        {/* REVIEW: confirm in the Cloudflare dashboard which security features are on for timelessknot.in. */}
+        {/* REVIEW: confirm in the Cloudflare dashboard which security features are on for the production domain. */}
         <p>
           Cloudflare may set strictly necessary cookies, or use similar technical measures, to recognise harmful traffic and
           protect the website. We do not use them to identify you or for advertising.
@@ -187,16 +185,14 @@ const sections: LegalSection[] = [
     heading: "Information Sharing",
     body: (
       <>
-        <p>We do not sell or rent personal information. We share it only:</p>
-        <ul>
-          <li>with the service providers described above, as needed to run the website and communicate with you;</li>
-          {/* REVIEW: confirm whether the studio works with associate photographers, editors or other collaborators. */}
-          <li>
-            with people who help us deliver a service you have booked, only where necessary and only for that booking;
-          </li>
-          <li>where the law, a court or a government authority requires it, or to protect rights, property or safety;</li>
-          <li>with your agreement.</li>
-        </ul>
+        <p>
+          The website itself passes your details to no one except the providers described above: Cloudflare, which delivers
+          the website, and WhatsApp, when you choose to open your enquiry there.
+        </p>
+        <p>
+          We may disclose personal information where the law, a court or a government authority requires it, or with your
+          agreement.
+        </p>
       </>
     ),
   },
@@ -273,7 +269,7 @@ const sections: LegalSection[] = [
         </p>
         <p>
           If you are a parent or guardian and believe a child has sent us personal information, please contact us and we will
-          delete it. Photographs and films of children taken at a booked event are covered by the agreement with our client.
+          delete it.
         </p>
       </>
     ),
