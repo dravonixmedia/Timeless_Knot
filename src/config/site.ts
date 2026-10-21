@@ -87,6 +87,8 @@ export type SiteConfig = {
   };
   credit: { label: string; href: string };
   nav: NavItem[];
+  /** Privacy and terms pages, linked from the footer. */
+  legal: NavItem[];
 };
 
 export const site: SiteConfig = {
@@ -144,6 +146,10 @@ export const site: SiteConfig = {
     { label: "Timeless Stories", href: "/stories" },
     { label: "The Experience", href: "/experience" },
     { label: "Contact", href: "/contact" },
+  ],
+  legal: [
+    { label: "Privacy Policy", href: "/privacy-policy" },
+    { label: "Terms & Conditions", href: "/terms-and-conditions" },
   ],
 };
 

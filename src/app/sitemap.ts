@@ -3,8 +3,8 @@ import { absoluteUrl } from "@/config/site";
 import { getStories } from "@/content/stories";
 
 /**
- * The five public pages (src/app/{page,our-story,stories,experience,contact})
- * plus every published story, as absolute canonical URLs.
+ * The public pages (src/app/{page,our-story,stories,experience,contact,
+ * privacy-policy,terms-and-conditions}) plus every published story, as absolute canonical URLs.
  *
  * No lastModified: pages are rebuilt on every deployment, so a build time would
  * claim changes that did not happen. No changeFrequency or priority either:
@@ -12,7 +12,7 @@ import { getStories } from "@/content/stories";
  * Filtered portfolio URLs (/stories?category=…) are views of /stories, not
  * separate pages, and are not listed.
  */
-const PUBLIC_PAGES = ["/", "/our-story", "/stories", "/experience", "/contact"] as const;
+const PUBLIC_PAGES = ["/", "/our-story", "/stories", "/experience", "/contact", "/privacy-policy", "/terms-and-conditions"] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const stories = getStories().map((story) => `/stories/${story.slug}`);
