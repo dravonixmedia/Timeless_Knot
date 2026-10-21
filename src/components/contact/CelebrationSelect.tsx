@@ -143,7 +143,7 @@ export function CelebrationSelect({ id, labelId, name, value, options, placehold
         }}
         className="field flex cursor-pointer items-center justify-between gap-4 text-left"
       >
-        <span className={value ? "" : "text-charcoal/45"}>{items[selected].label}</span>
+        <span className={value ? "" : "text-muted"}>{items[selected].label}</span>
         <svg
           aria-hidden="true"
           viewBox="0 0 12 8"
@@ -178,7 +178,7 @@ export function CelebrationSelect({ id, labelId, name, value, options, placehold
               onClick={() => choose(i)}
               className={`flex min-h-11 cursor-pointer items-center justify-between gap-4 px-5 py-3 text-[0.95rem] transition-colors duration-200 ${
                 i === active ? "bg-pale-sage/70" : ""
-              } ${i === 0 ? "text-charcoal/55" : "text-charcoal"} ${isSelected && i !== 0 ? "font-medium" : ""}`}
+              } ${i === 0 ? "text-muted" : "text-charcoal"} ${isSelected && i !== 0 ? "font-medium" : ""}`}
             >
               <span>{item.label}</span>
               {isSelected && i !== 0 && (

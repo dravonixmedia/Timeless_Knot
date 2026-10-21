@@ -143,7 +143,13 @@ function Grid({ items }: { items: { image: CategoryGallery["images"][number]; ca
           className="mb-5 break-inside-avoid sm:mb-6 lg:mb-8"
           {...reveal("mask", (i % 3) * 0.08)}
         >
-          <Picture media={image} sizes={SIZES} />
+          {/*
+            The grid's first photograph opens the default All Stories view (and
+            its own category's view) and is the page's LCP image: it alone loads
+            at once, with a preload. Every other photograph stays lazy, so those
+            hidden by a category filter are never downloaded.
+          */}
+          <Picture media={image} sizes={SIZES} priority={i === 0} />
         </figure>
       ))}
     </div>
