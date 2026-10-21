@@ -7,14 +7,13 @@ import { SectionRule } from "@/components/ui/SectionRule";
 import { Gallery } from "@/components/stories/Gallery";
 import { Invitation } from "@/components/sections/Invitation";
 import { Eyebrow, Lines, reveal } from "@/components/ui/Typography";
-import { pageMetadata } from "@/lib/seo";
+import { JsonLd, pageMetadata, pageSchema } from "@/lib/seo";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Our Story",
-  description:
-    "The vision and philosophy behind Timeless Knot — wedding photography and cinematography for couples who value personal expression, meaningful traditions and celebrations that feel entirely their own.",
-  path: "/our-story",
-});
+const title = "About Timeless Knot | Wedding Photography Studio in Kollam";
+const description =
+  "Get to know Timeless Knot, a wedding photography and cinematography studio based in Kollam, Kerala, creating meaningful visual stories.";
+
+export const metadata: Metadata = pageMetadata({ title, description, path: "/our-story" });
 
 /*
  * Copy is a refined rewrite of the client's supplied vision and philosophy:
@@ -45,6 +44,18 @@ export default function OurStoryPage() {
 
   return (
     <Page>
+      <JsonLd
+        data={pageSchema({
+          path: "/our-story",
+          name: title,
+          description,
+          type: "AboutPage",
+          breadcrumbs: [
+            { name: "Home", path: "/" },
+            { name: "Our Story", path: "/our-story" },
+          ],
+        })}
+      />
       {/* Hero */}
       <section aria-labelledby="our-story-title" className="bg-porcelain pt-[calc(var(--header-h)+clamp(3rem,9vw,8rem))]">
         <div className="frame editorial-grid items-end gap-y-14 pb-[var(--section-tight)]">
@@ -87,14 +98,18 @@ export default function OurStoryPage() {
               Who we are
             </h2>
             <p className="display-sm max-w-[34ch] font-light leading-[1.35]" {...reveal("up")}>
-              Timeless Knot is a wedding photography and cinematography studio devoted to the stories of the couples
-              we work with — their emotions, their personalities, their traditions and the relationships that surround
-              them.
+              Timeless Knot is a wedding photography and cinematography studio based in Kollam, Kerala, devoted to the
+              stories of the couples we work with — their emotions, their personalities, their traditions and the
+              relationships that surround them.
             </p>
             <p className="body-lg mt-10 max-w-[52ch] text-muted" {...reveal("up", 0.1)}>
               We believe a wedding should be remembered as it was felt. Not as a checklist of moments, but as a living
               story: the anticipation, the people, the rituals and the quiet in-between, all preserved through thoughtful
               imagery and cinematic storytelling.
+            </p>
+            <p className="body-lg mt-6 max-w-[52ch] text-muted" {...reveal("up", 0.15)}>
+              From Kollam, we photograph and film weddings, pre-weddings and couples across Kerala, and welcome
+              assignments throughout South India.
             </p>
           </div>
         </div>

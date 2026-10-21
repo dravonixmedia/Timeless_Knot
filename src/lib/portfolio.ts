@@ -18,7 +18,7 @@ export const categoryFromParam = (value: string | null | undefined): GalleryCate
 /**
  * Inline <head> script (runs before first paint): on /stories, records a valid
  * ?category= on <html data-portfolio="…"> so the prerendered gallery can show
- * that category immediately (see StaticGallery and globals.css). `available`
+ * that category immediately (see PortfolioGallery and globals.css). `available`
  * lists the categories that have photographs; anything else shows All.
  */
 export const portfolioBootScript = (available: readonly GalleryCategory[]) =>

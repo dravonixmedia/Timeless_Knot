@@ -40,6 +40,6 @@ test("the pre-paint CSS covers every portfolio category", () => {
   const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8");
   for (const c of PORTFOLIO_CATEGORIES) {
     assert.ok(css.includes(`[data-portfolio="${c}"] [data-portfolio-fallback] [data-portfolio-variant="${c}"]`), `${c}: filter bar rule`);
-    assert.ok(css.includes(`[data-portfolio="${c}"] [data-portfolio-fallback] figure:not([data-category="${c}"])`), `${c}: photograph rule`);
+    assert.ok(css.includes(`[data-portfolio="${c}"] [data-portfolio-grid] figure:not([data-category="${c}"])`), `${c}: photograph rule`);
   }
 });

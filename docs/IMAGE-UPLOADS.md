@@ -47,13 +47,13 @@ public/media/
 
 | You want… | Upload to | Needs `story.json`? | Appears on |
 | --- | --- | --- | --- |
-| Photos in the **portfolio** | directly into `weddings/`, `pre-wedding/`, `couples/` or `beyond-the-frame/` | **No** | Wedding Stories page → Portfolio (filter by category) |
+| Photos in the **portfolio** | directly into `weddings/`, `pre-wedding/`, `couples/` or `beyond-the-frame/` | **No** | Timeless Stories page (/stories) → Portfolio (filter by category) |
 | A full **wedding story** with its own page | a new subfolder, e.g. `weddings/anika-and-rohan/` | **Yes** (with `"published": true`) | Its own page `/stories/anika-and-rohan` + story listings |
 
 ### Portfolio galleries (`weddings/`, `pre-wedding/`, `couples/`, `beyond-the-frame/`)
 
 - Upload photographs **directly** into the category folder — no metadata file is
-  needed. They appear in the Portfolio on the Wedding Stories page after the next
+  needed. They appear in the Portfolio on the Timeless Stories page (/stories) after the next
   successful deployment, with a filter for each category that has photos.
 - Every photograph is shown **uncropped at its original shape** (portrait,
   landscape, square, 4:5, 2:3, 3:2 …) in a masonry layout.
@@ -125,7 +125,7 @@ public/media/weddings/anika-and-rohan/
   full-width and offset frames. Original proportions are always preserved.
 - **New images added to a published story appear automatically** on the next
   deployment. Removed images disappear.
-- Stories appear on the Wedding Stories page (with a filter by type) and,
+- Stories appear on the Timeless Stories page, `/stories` (with a filter by type) and,
   if `featured`, on the home page. Pre-wedding and couple stories use the same
   pages and layouts. Story covers are shown uncropped.
 - While no story is published, the Stories list and its filters are hidden
