@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
+import { Suspense } from "react";
 import { site } from "@/config/site";
+import { Header } from "@/components/layout/Header";
 import { RouteChrome } from "@/components/layout/RouteChrome";
 import { Footer } from "@/components/layout/Footer";
 import { WhatsAppButton } from "@/components/contact/WhatsAppButton";
@@ -75,7 +77,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body>
         <JsonLd data={siteSchema()} />
-        <RouteChrome />
+        <Suspense fallback={<Header pathname={null} />}>
+          <RouteChrome />
+        </Suspense>
         <main id="main" tabIndex={-1} className="outline-none">
           {children}
         </main>
