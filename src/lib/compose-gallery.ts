@@ -14,6 +14,8 @@ export type ManifestImage = {
   focal?: string;
   /** Content fingerprint (see scripts/media/generate-image-manifest.mjs). */
   hash?: string;
+  /** A film poster extracted at build time rather than uploaded (scripts/media/film-posters.mjs). */
+  generated?: boolean;
 };
 
 /**

@@ -191,11 +191,39 @@ featured film), followed by `home/films/` in filename order (`01-…` before
 
 ### Posters
 
-A still from the film, saved as a JPG (or PNG/WebP/AVIF) with the **same name as
-the film**. It is shown before the film plays and as the film's preview in the
-strip. Without one, the player shows the film's first frame and the strip shows
-a numbered tile — no video is downloaded just to make a preview, and nothing is
-generated. Recommended: 1920×1080 (16:9), under 500 KB.
+**Automatic.** Every film gets a poster without any image upload. The build
+takes a still from about a fifth of the way into the film, letting FFmpeg pick
+the most representative frame of the following second and passing over dark
+frames (fades, black openings) for another moment. The still keeps the film's
+own proportions (nothing cropped or stretched) and is at most 1920 px wide. It
+is shown before the film plays and as the film's preview in the strip.
+
+**Your own poster always wins.** To choose the still yourself, upload a JPG
+(or PNG/WebP/AVIF) with the **same name as the film** (`ceremony.mp4` +
+`ceremony.jpg`). Recommended: 1920×1080 (16:9), under 500 KB.
+
+**How it works**
+
+- Generated posters are cached by the film's content. A film is only processed
+  again when its file changes, and replacing a film automatically gives it a new
+  poster.
+- **Where they are stored:**
+  - the cache: `node_modules/.cache/timeless-knot/film-posters/`;
+  - the published copies: `public/media-generated/film-posters/`, served from
+    their fingerprinted `/media-cache/` copies.
+  - Neither is committed to Git.
+- The build log shows, e.g.,
+  `home films: V 01.mp4 (960×720, 4.7 MB, generated poster) … film posters: 1 generated, 3 from cache`.
+- Frames are taken during the build only, never on the live site.
+
+**FFmpeg.** The build uses `FFMPEG_PATH` if set, otherwise an `ffmpeg` on the
+PATH, otherwise the static FFmpeg from the optional npm package
+`@ffmpeg-installer/ffmpeg`, which `npm ci` installs automatically. That last
+option is what Cloudflare's build uses, so nothing needs configuring there.
+
+If none is available, or a film cannot be decoded, that film simply has no
+poster, as before: the player shows its first frame and the strip a numbered
+tile. The build log says why.
 
 ### The original `home/video/` film
 

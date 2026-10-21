@@ -51,3 +51,4 @@ next-env.d.ts
 /src/content/generated/
 /public/.assetsignore
 /public/media-cache/
+/public/media-generated/
