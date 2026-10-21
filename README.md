@@ -27,7 +27,7 @@ Copy `.env.example` to `.env.local` and fill in:
 
 | Variable | Purpose |
 | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | **Build variable.** The canonical production origin for canonical URLs, sitemap, robots.txt, Open Graph and structured data, and for the Worker's host rules (only the canonical host is indexable; legacy/alias hosts 301 to it; every other host gets `X-Robots-Tag: noindex, nofollow`). Unset = `https://timelessknot.dravonix.dev`. Must be a bare HTTPS origin, or the build fails. **Do not set it to `https://timelessknot.in` until that domain is verified** — see [docs/DOMAIN-MIGRATION.md](docs/DOMAIN-MIGRATION.md). |
+| `NEXT_PUBLIC_SITE_URL` | **Optional build variable — normally leave it unset.** The canonical production origin is `https://timelessknot.in` (`DEFAULT_CANONICAL_ORIGIN` in `src/lib/indexing.ts`). It drives canonical URLs, sitemap, robots.txt, Open Graph, structured data and the Worker's host rules: only the canonical host is indexable, `timelessknot.dravonix.dev` and `www.timelessknot.in` 301 to it, and every other host (previews, workers.dev, localhost) gets `X-Robots-Tag: noindex, nofollow`. A value that is not a bare HTTPS origin, or that names a redirect-only host, fails the build. See [docs/DOMAIN-MIGRATION.md](docs/DOMAIN-MIGRATION.md). |
 | `ENQUIRY_WEBHOOK_URL` | Server-side endpoint that receives contact enquiries as JSON. **Not configured yet: the contact form is not connected to any production enquiry destination.** It runs in clearly labelled demonstration mode, sends nothing and never reports a false success. Enquiries currently arrive only through WhatsApp. Needed both as a build variable (the page shows the form as live) and as a runtime secret (the API forwards to it). |
 | `NEXT_PUBLIC_WHATSAPP_URL` | *Optional* fallback for the WhatsApp link — see **WhatsApp** below. Read at build time. |
 
@@ -69,7 +69,7 @@ Cloudflare dashboard → Workers & Pages → `timeless-knot` → Settings → Bu
 | Build command | `npx opennextjs-cloudflare build` |
 | Deploy command | `npx opennextjs-cloudflare deploy` |
 | Non-production branch deploy command | `npm run deploy:preview` — builds with OpenNext, copies the prerendered pages into the assets, then runs `wrangler preview`. Cloudflare runs only the install step before this command for preview builds, so a bare `npx wrangler preview` has no `.open-next/worker.js` to deploy. Bindings come from the `previews` block in `wrangler.jsonc`. |
-| Build variables | `NEXT_PUBLIC_SITE_URL` (canonical domain — see [docs/DOMAIN-MIGRATION.md](docs/DOMAIN-MIGRATION.md)); `ENQUIRY_WEBHOOK_URL` (when available); `NEXT_PUBLIC_WHATSAPP_URL` only if not set in code |
+| Build variables | `ENQUIRY_WEBHOOK_URL` (when available); `NEXT_PUBLIC_WHATSAPP_URL` only if not set in code. `NEXT_PUBLIC_SITE_URL` is not needed — remove it, or it must be exactly `https://timelessknot.in` ([docs/DOMAIN-MIGRATION.md](docs/DOMAIN-MIGRATION.md)) |
 | Runtime variables / secrets | `ENQUIRY_WEBHOOK_URL` (when available) |
 
 - Use `opennextjs-cloudflare deploy`, **not** a bare `wrangler deploy`: it first copies the prerendered

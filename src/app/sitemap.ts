@@ -2,18 +2,19 @@ import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/config/site";
 import { getStories } from "@/content/stories";
 
+/**
+ * The five public pages (src/app/{page,our-story,stories,experience,contact})
+ * plus every published story, as absolute canonical URLs.
+ *
+ * No lastModified: pages are rebuilt on every deployment, so a build time would
+ * claim changes that did not happen. No changeFrequency or priority either:
+ * search engines ignore them and they would carry no real information.
+ * Filtered portfolio URLs (/stories?category=…) are views of /stories, not
+ * separate pages, and are not listed.
+ */
+const PUBLIC_PAGES = ["/", "/our-story", "/stories", "/experience", "/contact"] as const;
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = ["/", "/our-story", "/stories", "/experience", "/contact"].map((path) => ({
-    url: absoluteUrl(path),
-    changeFrequency: "monthly" as const,
-    priority: path === "/" ? 1 : 0.8,
-  }));
-
-  const stories = getStories().map((story) => ({
-    url: absoluteUrl(`/stories/${story.slug}`),
-    changeFrequency: "yearly" as const,
-    priority: 0.7,
-  }));
-
-  return [...pages, ...stories];
+  const stories = getStories().map((story) => `/stories/${story.slug}`);
+  return [...PUBLIC_PAGES, ...stories].map((path) => ({ url: absoluteUrl(path) }));
 }

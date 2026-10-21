@@ -4,22 +4,22 @@
  * Graph and structured data — via src/config/site.ts) and by the Cloudflare
  * Worker (custom-worker.ts), so the two can never disagree.
  *
- * The canonical origin comes from one setting: the NEXT_PUBLIC_SITE_URL build
- * variable, captured at build time by scripts/site/write-site-config.mjs. When
- * it is not set, the current production domain below is used.
+ * The canonical origin is the production domain below. The NEXT_PUBLIC_SITE_URL
+ * build variable (captured at build time by scripts/site/write-site-config.mjs)
+ * can override it, but it is not needed: production works with it unset.
  *
  *   - The canonical host is served normally and may be indexed.
  *   - A host in REDIRECT_HOSTNAMES that is not (or is no longer) canonical
  *     permanently redirects to the same path on the canonical origin.
- *   - Every other host — workers.dev, preview URLs, localhost, or a new domain
- *     that is attached but not yet canonical — is served with
- *     `X-Robots-Tag: noindex, nofollow`.
+ *   - Every other host — workers.dev, preview URLs, localhost, staging — is
+ *     served with `X-Robots-Tag: noindex, nofollow`.
  *
- * See docs/DOMAIN-MIGRATION.md for moving to https://timelessknot.in.
+ * The site moved from timelessknot.dravonix.dev to timelessknot.in: see
+ * docs/DOMAIN-MIGRATION.md.
  */
 
-/** Canonical origin when NEXT_PUBLIC_SITE_URL is not set: the current production domain. */
-export const DEFAULT_CANONICAL_ORIGIN = "https://timelessknot.dravonix.dev";
+/** Canonical origin when NEXT_PUBLIC_SITE_URL is not set: the production domain. */
+export const DEFAULT_CANONICAL_ORIGIN = "https://timelessknot.in";
 
 /**
  * Hostnames that belong to the studio and should send visitors (and search
@@ -32,9 +32,10 @@ export const REDIRECT_HOSTNAMES: readonly string[] = ["timelessknot.dravonix.dev
 /**
  * Validates a configured site URL and returns its bare origin
  * (`https://host`, lower case, no path or trailing slash). Empty means the
- * default. Anything else — not HTTPS, a path, credentials, a port — throws, so
- * a mistyped build variable fails the build instead of publishing wrong
- * canonical URLs.
+ * default. Anything else — not HTTPS, a path, credentials, a port, or a host
+ * that only redirects (such as the old timelessknot.dravonix.dev) — throws, so
+ * a mistyped or stale build variable fails the build instead of publishing a
+ * site whose own domain is marked noindex.
  */
 export function resolveCanonicalOrigin(value: string | null | undefined): string {
   const raw = (value ?? "").trim();
@@ -48,6 +49,11 @@ export function resolveCanonicalOrigin(value: string | null | undefined): string
   const bare = url.pathname === "/" && !url.search && !url.hash && !url.username && !url.password && !url.port;
   if (url.protocol !== "https:" || !bare) {
     throw new Error(`NEXT_PUBLIC_SITE_URL "${raw}" must be an HTTPS origin with no path, e.g. https://timelessknot.in`);
+  }
+  if (REDIRECT_HOSTNAMES.includes(url.hostname)) {
+    throw new Error(
+      `NEXT_PUBLIC_SITE_URL "${raw}" is a redirect-only address that forwards to ${DEFAULT_CANONICAL_ORIGIN} — remove the variable (or set it to ${DEFAULT_CANONICAL_ORIGIN}) in Cloudflare → Workers & Pages → timeless-knot → Settings → Build`,
+    );
   }
   return url.origin;
 }
