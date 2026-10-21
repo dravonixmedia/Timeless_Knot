@@ -353,6 +353,18 @@ html.lenis body {
   }
 }
 
+/* Contact form thank-you: a hairline heart drawn in a single stroke. */
+@keyframes heart-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .heart-draw path {
+    stroke-dasharray: 1;
+    animation: heart-draw 1.6s var(--ease-editorial) 0.2s both;
+  }
+}
+
 /* Contact form: the celebration list settles in gently when it opens. */
 @keyframes listbox-in {
   from { opacity: 0; transform: translate3d(0, -4px, 0); }

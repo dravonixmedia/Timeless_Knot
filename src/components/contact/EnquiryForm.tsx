@@ -5,6 +5,7 @@ import { celebrationTypes, emptyEnquiry, formatEnquiryMessage, validateEnquiry, 
 import { whatsappChatUrl } from "@/lib/whatsapp";
 import { Arrow } from "@/components/ui/Links";
 import { CelebrationSelect } from "./CelebrationSelect";
+import { EnquiryThankYou } from "./EnquiryThankYou";
 
 /**
  * Contact form that sends enquiries through WhatsApp.
@@ -13,17 +14,16 @@ import { CelebrationSelect } from "./CelebrationSelect";
  * same number as the floating WhatsApp button — opens with the enquiry written
  * out (the app on phones, WhatsApp Web on desktop). Nothing is sent until the
  * visitor presses Send in WhatsApp, so the form never claims the enquiry has
- * been delivered: it says WhatsApp is ready, keeps the details, and offers the
- * link again in case WhatsApp did not open.
+ * been delivered: a thank-you (EnquiryThankYou) asks them to send it there,
+ * offers the same prefilled link again, and can return to an empty form.
  */
 export function EnquiryForm({ whatsappNumber }: { whatsappNumber: string | null }) {
   const [values, setValues] = useState<Enquiry>(emptyEnquiry);
   const [errors, setErrors] = useState<EnquiryErrors>({});
   const [touched, setTouched] = useState<Partial<Record<keyof Enquiry, boolean>>>({});
-  /** The WhatsApp link last opened for this enquiry — shown again so it can be reopened. */
+  /** The WhatsApp link opened for this enquiry; while set, the thank-you replaces the form. */
   const [handoff, setHandoff] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
-  const statusRef = useRef<HTMLDivElement>(null);
   const uid = useId();
 
   const update = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -32,8 +32,6 @@ export function EnquiryForm({ whatsappNumber }: { whatsappNumber: string | null 
   const setField = (name: keyof Enquiry, value: string) => {
     const next = { ...values, [name]: value };
     setValues(next);
-    // Edited after WhatsApp opened: the earlier link no longer matches the form.
-    setHandoff(null);
     if (touched[name]) setErrors(validateEnquiry(next));
   };
 
@@ -42,7 +40,6 @@ export function EnquiryForm({ whatsappNumber }: { whatsappNumber: string | null 
     setErrors(validateEnquiry(values));
   };
 
-  const focusStatus = () => requestAnimationFrame(() => statusRef.current?.focus());
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,7 +50,6 @@ export function EnquiryForm({ whatsappNumber }: { whatsappNumber: string | null 
     setTouched(Object.fromEntries(Object.keys(values).map((k) => [k, true])));
     const firstInvalid = Object.keys(found)[0];
     if (firstInvalid) {
-      setHandoff(null);
       formRef.current?.querySelector<HTMLElement>(`[name="${firstInvalid}"]`)?.focus();
       return;
     }
@@ -66,8 +62,18 @@ export function EnquiryForm({ whatsappNumber }: { whatsappNumber: string | null 
     if (opened) opened.opener = null;
     else window.location.assign(url);
     setHandoff(url);
-    focusStatus();
   }
+
+  /** "Send Another Enquiry": an empty form again, ready to type into. */
+  const reset = () => {
+    setValues(emptyEnquiry);
+    setErrors({});
+    setTouched({});
+    setHandoff(null);
+    requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('[name="name"]')?.focus());
+  };
+
+  if (handoff) return <EnquiryThankYou whatsappUrl={handoff} onReset={reset} />;
 
   const field = (name: keyof Enquiry) => ({
     id: `${uid}-${name}`,
@@ -157,22 +163,6 @@ export function EnquiryForm({ whatsappNumber }: { whatsappNumber: string | null 
         </button>
       </div>
 
-      <div ref={statusRef} tabIndex={-1} aria-live="polite" className="outline-none">
-        {handoff && (
-          <div className="mt-8 border-l border-olive/60 pl-5 text-[0.9rem] text-charcoal">
-            <p>
-              <strong className="font-medium">Almost there — your enquiry is ready in WhatsApp.</strong> It has not been
-              sent yet: please check it and press <strong className="font-medium">Send</strong> in WhatsApp to deliver it to us.
-            </p>
-            <p className="mt-3 text-muted">
-              WhatsApp didn’t open?{" "}
-              <a href={handoff} target="_blank" rel="noopener noreferrer" className="link-draw text-charcoal">
-                Open WhatsApp with your enquiry
-              </a>
-            </p>
-          </div>
-        )}
-      </div>
     </form>
   );
 }

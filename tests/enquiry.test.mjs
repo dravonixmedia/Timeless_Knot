@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { celebrationTypes, emptyEnquiry, formatEnquiryDate, formatEnquiryMessage, validateEnquiry } from "../src/lib/enquiry.ts";
+import { celebrationTypes, emptyEnquiry, enquiryThankYou, formatEnquiryDate, formatEnquiryMessage, validateEnquiry } from "../src/lib/enquiry.ts";
 import { resolveWhatsappUrl, whatsappChatUrl, whatsappNumber } from "../src/lib/whatsapp.ts";
 
 const read = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), "utf8");
@@ -133,4 +133,33 @@ test("the WhatsApp link encodes the whole message so it arrives exactly as writt
   assert.equal(parsed.searchParams.get("text"), tricky, "round-trips exactly");
   assert.ok(!/[\s&#+?💍]/u.test(url.split("?text=")[1]), "spaces, &, #, +, ? and emoji are percent-encoded");
   assert.ok(url.includes("%0A"), "line breaks are kept");
+});
+
+test("the thank-you uses the agreed copy and never claims the enquiry was delivered", () => {
+  assert.deepEqual(enquiryThankYou, {
+    heading: "Thank You for Sharing Your Story.",
+    subheading: "Every beautiful story begins with a conversation.",
+    message: "Your enquiry is ready in WhatsApp. Please tap Send there to share it with us.",
+    closing: "We look forward to hearing your story.",
+    signature: "— Timeless Knot",
+    continueLabel: "Continue to WhatsApp",
+    resetLabel: "Send Another Enquiry",
+  });
+  const all = Object.values(enquiryThankYou).join(" ").toLowerCase();
+  for (const claim of ["received", "delivered", "has been sent", "was sent", "we got", "we'll be in touch", "successfully"]) {
+    assert.ok(!all.includes(claim), `no "${claim}"`);
+  }
+});
+
+test("the thank-you replaces the form only after WhatsApp opens, reopens the same link and can reset", () => {
+  const form = read("src/components/contact/EnquiryForm.tsx");
+  const thanks = read("src/components/contact/EnquiryThankYou.tsx");
+  // Shown with the very link that was opened (built from the formatted message).
+  assert.match(form, /const url = whatsappChatUrl\(whatsappNumber, formatEnquiryMessage\(values\)\);[\s\S]*setHandoff\(url\);/);
+  assert.match(form, /if \(handoff\) return <EnquiryThankYou whatsappUrl=\{handoff\} onReset=\{reset\} \/>;/);
+  // Validation still runs first: an invalid form returns before anything opens.
+  assert.ok(form.indexOf("if (firstInvalid)") < form.indexOf("window.open(url"), "validation precedes opening WhatsApp");
+  assert.match(thanks, /href=\{whatsappUrl\}[\s\S]*target="_blank"[\s\S]*rel="noopener noreferrer"/);
+  assert.match(thanks, /onClick=\{onReset\}/);
+  for (const key of Object.keys(enquiryThankYou)) assert.match(thanks, new RegExp(`copy\\.${key}`), key);
 });

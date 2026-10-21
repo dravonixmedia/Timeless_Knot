@@ -57,6 +57,21 @@ export function validateEnquiry(input: Enquiry): EnquiryErrors {
   return errors;
 }
 
+/**
+ * Shown once WhatsApp has opened with the enquiry. A wa.me link cannot tell
+ * whether the visitor pressed Send, so this thanks them and asks them to send
+ * it — it never says the enquiry was delivered or received.
+ */
+export const enquiryThankYou = {
+  heading: "Thank You for Sharing Your Story.",
+  subheading: "Every beautiful story begins with a conversation.",
+  message: "Your enquiry is ready in WhatsApp. Please tap Send there to share it with us.",
+  closing: "We look forward to hearing your story.",
+  signature: "— Timeless Knot",
+  continueLabel: "Continue to WhatsApp",
+  resetLabel: "Send Another Enquiry",
+} as const;
+
 /** "2027-02-14" → "14 February 2027" (the date as chosen, independent of time zone). */
 export function formatEnquiryDate(iso: string): string {
   if (!DATE.test(iso)) return iso;
