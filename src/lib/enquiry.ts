@@ -16,6 +16,21 @@ export const celebrationTypes = [
   "Other Enquiry",
 ] as const;
 
+/**
+ * Field labels shared by the form and the WhatsApp message, so both always use
+ * the same words. Date and location are worded for every kind of enquiry —
+ * weddings, engagements, pre-wedding and couple shoots, and anything else.
+ */
+export const enquiryLabels = {
+  name: "Full name",
+  email: "Email address",
+  phone: "Phone number",
+  date: "Event / Shoot Date",
+  location: "Event / Shoot Location",
+  celebration: "Type of celebration",
+  message: "Your story / message",
+} as const;
+
 export type Enquiry = {
   name: string;
   email: string;
@@ -94,9 +109,9 @@ export function formatEnquiryMessage(input: Enquiry): string {
     ["Name", line(input.name)],
     ["Email", line(input.email)],
     ["Phone", line(input.phone)],
-    ["Wedding date", input.date ? formatEnquiryDate(input.date.trim()) : ""],
-    ["Wedding location", line(input.location)],
-    ["Type of celebration", line(input.celebration)],
+    [enquiryLabels.date, input.date ? formatEnquiryDate(input.date.trim()) : ""],
+    [enquiryLabels.location, line(input.location)],
+    [enquiryLabels.celebration, line(input.celebration)],
   ];
   const story = input.message
     .replace(/\r\n?/g, "\n")
@@ -108,7 +123,7 @@ export function formatEnquiryMessage(input: Enquiry): string {
   return [
     "Hello Timeless Knot,",
     "",
-    "I would like to enquire about your wedding photography and cinematography.",
+    "I would like to enquire about your photography and cinematography services.",
     "",
     ...details.filter(([, value]) => value).map(([label, value]) => `*${label}:* ${value}`),
     ...(story ? ["", "*Our story:*", story] : []),

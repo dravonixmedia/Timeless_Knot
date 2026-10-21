@@ -79,9 +79,20 @@ export function Footer() {
         </div>
 
         <div className="mt-[var(--section-tight)] flex flex-col gap-4 border-t border-ivory/15 pt-8 text-[0.78rem] text-ivory/70 sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            © <CurrentYear /> {site.name}. All rights reserved.
-          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8">
+            <p>
+              © <CurrentYear /> {site.name}. All rights reserved.
+            </p>
+            <ul aria-label="Legal" className="flex flex-wrap gap-x-8 gap-y-3">
+              {site.legal.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="link-draw hover:text-ivory">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
           <a href={site.credit.href} target="_blank" rel="noopener" className="link-draw hover:text-ivory">
             {site.credit.label}
           </a>

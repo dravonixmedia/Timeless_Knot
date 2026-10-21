@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
-import { celebrationTypes, emptyEnquiry, formatEnquiryMessage, validateEnquiry, type Enquiry, type EnquiryErrors } from "@/lib/enquiry";
+import { celebrationTypes, emptyEnquiry, enquiryLabels, formatEnquiryMessage, validateEnquiry, type Enquiry, type EnquiryErrors } from "@/lib/enquiry";
 import { whatsappChatUrl } from "@/lib/whatsapp";
 import { Arrow } from "@/components/ui/Links";
 import { CelebrationSelect } from "./CelebrationSelect";
@@ -97,27 +97,27 @@ export function EnquiryForm({ whatsappNumber }: { whatsappNumber: string | null 
     <form ref={formRef} noValidate onSubmit={submit} aria-describedby={`${uid}-how`}>
 
       <div className="grid gap-x-10 gap-y-10 sm:grid-cols-2">
-        <Field label="Full name" htmlFor={`${uid}-name`} required>
+        <Field label={enquiryLabels.name} htmlFor={`${uid}-name`} required>
           <input {...field("name")} type="text" autoComplete="name" required />
           {error("name")}
         </Field>
-        <Field label="Email address" htmlFor={`${uid}-email`} required>
+        <Field label={enquiryLabels.email} htmlFor={`${uid}-email`} required>
           <input {...field("email")} type="email" autoComplete="email" inputMode="email" required />
           {error("email")}
         </Field>
-        <Field label="Phone number" htmlFor={`${uid}-phone`}>
+        <Field label={enquiryLabels.phone} htmlFor={`${uid}-phone`}>
           <input {...field("phone")} type="tel" autoComplete="tel" inputMode="tel" />
           {error("phone")}
         </Field>
-        <Field label="Wedding date" htmlFor={`${uid}-date`}>
+        <Field label={enquiryLabels.date} htmlFor={`${uid}-date`}>
           <input {...field("date")} type="date" />
           {error("date")}
         </Field>
-        <Field label="Wedding location" htmlFor={`${uid}-location`}>
+        <Field label={enquiryLabels.location} htmlFor={`${uid}-location`}>
           <input {...field("location")} type="text" autoComplete="off" placeholder="City, venue or ‘still dreaming’" />
           {error("location")}
         </Field>
-        <Field label="Type of celebration" htmlFor={`${uid}-celebration`} labelId={`${uid}-celebration-label`}>
+        <Field label={enquiryLabels.celebration} htmlFor={`${uid}-celebration`} labelId={`${uid}-celebration-label`}>
           <CelebrationSelect
             id={`${uid}-celebration`}
             labelId={`${uid}-celebration-label`}
@@ -133,8 +133,8 @@ export function EnquiryForm({ whatsappNumber }: { whatsappNumber: string | null 
           {error("celebration")}
         </Field>
         <div className="sm:col-span-2">
-          <Field label="Your story / message" htmlFor={`${uid}-message`} required>
-            <textarea {...field("message")} rows={5} className="field resize-y" placeholder="Tell us about the two of you and the celebration you imagine." />
+          <Field label={enquiryLabels.message} htmlFor={`${uid}-message`} required>
+            <textarea {...field("message")} rows={5} className="field resize-y" placeholder="Tell us about yourselves and the celebration or shoot you have in mind." />
             {error("message")}
           </Field>
         </div>

@@ -92,6 +92,7 @@ Cloudflare dashboard → Workers & Pages → `timeless-knot` → Settings → Bu
 ```
 src/
   app/                    routes: /, /our-story, /stories, /stories/[slug], /experience, /contact,
+                          /privacy-policy, /terms-and-conditions (see docs/LEGAL-REVIEW.md),
                           404, sitemap, robots, OG image, /film/[file] (range-request film stream)
   config/site.ts          confirmed business facts (name, tagline, contact, socials, logo, nav)
   content/

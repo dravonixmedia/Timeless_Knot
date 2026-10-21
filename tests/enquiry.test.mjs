@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { celebrationTypes, emptyEnquiry, enquiryThankYou, formatEnquiryDate, formatEnquiryMessage, validateEnquiry } from "../src/lib/enquiry.ts";
+import { celebrationTypes, emptyEnquiry, enquiryLabels, enquiryThankYou, formatEnquiryDate, formatEnquiryMessage, validateEnquiry } from "../src/lib/enquiry.ts";
 import { resolveWhatsappUrl, whatsappChatUrl, whatsappNumber } from "../src/lib/whatsapp.ts";
 
 const read = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), "utf8");
@@ -91,13 +91,13 @@ test("the message is professional and lists every completed field, leaving empty
     [
       "Hello Timeless Knot,",
       "",
-      "I would like to enquire about your wedding photography and cinematography.",
+      "I would like to enquire about your photography and cinematography services.",
       "",
       "*Name:* Asha Nair",
       "*Email:* asha@example.com",
       "*Phone:* +91 70346 71830",
-      "*Wedding date:* 14 February 2027",
-      "*Wedding location:* Kollam, Kerala",
+      "*Event / Shoot Date:* 14 February 2027",
+      "*Event / Shoot Location:* Kollam, Kerala",
       "*Type of celebration:* Wedding",
       "",
       "*Our story:*",
@@ -109,8 +109,23 @@ test("the message is professional and lists every completed field, leaving empty
     ].join("\n"),
   );
   const minimal = formatEnquiryMessage(valid);
-  assert.ok(!/Phone|Wedding date|Wedding location|Type of celebration/.test(minimal), "empty optional fields are omitted");
+  assert.ok(!/Phone|Event \/ Shoot|Type of celebration/.test(minimal), "empty optional fields are omitted");
   assert.ok(!/undefined|null/.test(minimal));
+});
+
+test("date and location are worded for every kind of shoot, in the form and the WhatsApp message alike", () => {
+  assert.equal(enquiryLabels.date, "Event / Shoot Date");
+  assert.equal(enquiryLabels.location, "Event / Shoot Location");
+  const form = read("src/components/contact/EnquiryForm.tsx");
+  for (const key of Object.keys(enquiryLabels)) assert.match(form, new RegExp(`label=\\{enquiryLabels\\.${key}\\}`), key);
+  // Both stay optional: no required marker, and an enquiry without them is valid.
+  assert.match(form, /label=\{enquiryLabels\.date\} htmlFor=\{`\$\{uid\}-date`\}>/);
+  assert.match(form, /label=\{enquiryLabels\.location\} htmlFor=\{`\$\{uid\}-location`\}>/);
+  assert.deepEqual(validateEnquiry({ ...valid, date: "", location: "" }), {});
+  const message = formatEnquiryMessage({ ...valid, date: "2027-02-14", location: "Munnar" });
+  assert.ok(message.includes(`*${enquiryLabels.date}:* 14 February 2027\n*${enquiryLabels.location}:* Munnar\n`));
+  for (const text of [form, message, read("src/lib/enquiry.ts")]) assert.ok(!/wedding (date|location)/i.test(text), "no wedding-only wording");
+  assert.ok(!/wedding photography/i.test(message), "the greeting covers every service");
 });
 
 test("dates read naturally, whatever the visitor's time zone", () => {
