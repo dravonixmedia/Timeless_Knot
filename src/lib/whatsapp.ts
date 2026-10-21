@@ -2,8 +2,8 @@
  * WhatsApp link handling.
  *
  * The site uses one direct click-to-chat link (configured in
- * src/config/site.ts) for the floating button, the footer and the contact
- * page. Only genuine https://wa.me/ links are accepted — any other scheme or
+ * src/config/site.ts) for the floating button, the footer, the contact page
+ * and the contact form's WhatsApp enquiries. Only genuine https://wa.me/ links are accepted — any other scheme or
  * domain is rejected, so a typo can never turn into an unsafe or unrelated link.
  *
  * This module has no imports so it can be unit-tested directly with Node.
@@ -51,4 +51,25 @@ export function resolveWhatsappUrl(value: string | null | undefined, message: st
   if (code && !url.search) return `https://wa.me/message/${code[1]}`;
 
   return null;
+}
+
+/**
+ * The international number (digits only) behind a direct link produced by
+ * resolveWhatsappUrl — the same number the floating button opens. Null for a
+ * WhatsApp Business short link (wa.me/message/…), which cannot carry a custom
+ * message, or when no link is configured.
+ */
+export function whatsappNumber(link: string | null | undefined): string | null {
+  const resolved = resolveWhatsappUrl(link);
+  if (!resolved) return null;
+  return PHONE_PATH.exec(new URL(resolved).pathname)?.[1] ?? null;
+}
+
+/**
+ * A click-to-chat link that opens WhatsApp (the app on phones, WhatsApp Web on
+ * desktop) with `message` ready to send. Line breaks, emoji and every reserved
+ * character are percent-encoded, so the text arrives exactly as written.
+ */
+export function whatsappChatUrl(number: string, message: string): string {
+  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }
