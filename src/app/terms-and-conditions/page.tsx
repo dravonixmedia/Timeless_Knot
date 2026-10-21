@@ -144,8 +144,8 @@ const sections: LegalSection[] = [
         {/* REVIEW: confirm ownership of all published work and brand assets, including any by associate photographers. */}
         <p>
           The photographs, films, text, design, logo, TK monogram and the name {site.name} on this website, and all other
-          content on it, are owned by or licensed to {site.name}. They are protected by the Copyright Act, 1957, the Trade
-          Marks Act, 1999 and other applicable laws.
+          content on it, are owned by or licensed to {site.name}. They are protected by the Copyright Act, 1957 and other
+          applicable intellectual property laws.
         </p>
         <p>
           Using this website does not give you any licence to use this content, except as these terms expressly allow. Any rights
@@ -159,14 +159,15 @@ const sections: LegalSection[] = [
     heading: "Photography and Film Portfolio Usage",
     body: (
       <>
-        {/* REVIEW: confirm that permission is on record for every identifiable person in the published portfolio. */}
+        {/* REVIEW: once the studio confirms permission is on record for every identifiable person shown, a statement
+            to that effect may be added here (see docs/LEGAL-REVIEW.md). */}
         <p>
-          The photographs and films on this website show examples of our work. We feature identifiable clients only where they
-          have agreed, whether in their booking agreement or separately.
+          The photographs and films on this website show examples of our work. Publishing a photograph or film here does not
+          give anyone else the right to use it.
         </p>
         <p>
           If you appear in our portfolio and would like a photograph or film reviewed or removed, please{" "}
-          <a href="#contact-information">contact us</a>. We will respond promptly.
+          <a href="#contact-information">contact us</a>.
         </p>
       </>
     ),

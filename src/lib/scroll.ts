@@ -68,6 +68,9 @@ export const refreshLenis = () => {
  */
 export const smoothScrollTo = (target: HTMLElement, onComplete?: () => void) => {
   if (!instance) return false;
+  // Start from the real position: a native scroll just before (e.g. focusing a
+  // link off-screen) may not have reached Lenis yet.
+  instance.resize();
   instance.scrollTo(target, { onComplete });
   return true;
 };

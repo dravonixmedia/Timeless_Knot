@@ -100,7 +100,6 @@ export function LegalPage({ path, title, description, eyebrow, heading, intro, u
               <section
                 key={section.id}
                 id={section.id}
-                aria-labelledby={`${section.id}-title`}
                 tabIndex={-1}
                 className="outline-none scroll-mt-[calc(var(--header-h)+1.5rem)] border-t border-charcoal/12 py-10 first:border-t-0 first:pt-0 lg:py-12"
               >

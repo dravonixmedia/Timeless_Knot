@@ -94,6 +94,27 @@ test("no invented business terms, contacts or guarantees", () => {
   assert.match(terms, /These website terms do not replace that agreement/);
 });
 
+test("REVIEW notes stay in source comments and never reach the page", () => {
+  for (const [name, page] of [["privacy", privacy], ["terms", terms]]) {
+    assert.ok(page.includes("REVIEW"), `${name} keeps its review notes`);
+    const rendered = page.replace(/\/\*[\s\S]*?\*\//g, "");
+    assert.ok(!/REVIEW|TODO|\bTBC\b|lorem ipsum/.test(rendered), `${name}: no draft markers outside comments`);
+  }
+});
+
+test("statements the studio has not confirmed are not published as commitments", () => {
+  const both = `${privacy}\n${terms}`.replace(/\/\*[\s\S]*?\*\//g, "");
+  for (const unconfirmed of [/do not sell (your )?personal/i, /associate|collaborator|second shooter|editors?\b/i, /promptly/i, /Trade Marks Act/, /only where they have agreed/i, /are covered by the agreement/i]) {
+    assert.ok(!unconfirmed.test(both), `nothing matching ${unconfirmed}`);
+  }
+});
+
+test("canonical URLs come from the central site configuration, not a hard-coded domain", () => {
+  for (const file of ["src/app/privacy-policy/page.tsx", "src/app/terms-and-conditions/page.tsx", "src/components/legal/LegalPage.tsx", "src/components/legal/StudioContact.tsx"]) {
+    assert.ok(!/timelessknot\.|dravonix\.dev|https?:\/\/(?!www\.(whatsapp|cloudflare)\.com)/.test(read(file)), `${file} names no site origin`);
+  }
+});
+
 test("the footer links to both pages, and they are in the sitemap", () => {
   const site = read("src/config/site.ts");
   assert.match(site, /\{ label: "Privacy Policy", href: "\/privacy-policy" \}/);
