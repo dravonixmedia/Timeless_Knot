@@ -4,6 +4,7 @@ import { useId, useRef, useState, type ChangeEvent, type FormEvent, type ReactNo
 import { celebrationTypes, emptyEnquiry, formatEnquiryMessage, validateEnquiry, type Enquiry, type EnquiryErrors } from "@/lib/enquiry";
 import { whatsappChatUrl } from "@/lib/whatsapp";
 import { Arrow } from "@/components/ui/Links";
+import { CelebrationSelect } from "./CelebrationSelect";
 
 /**
  * Contact form that sends enquiries through WhatsApp.
@@ -25,9 +26,11 @@ export function EnquiryForm({ whatsappNumber }: { whatsappNumber: string | null 
   const statusRef = useRef<HTMLDivElement>(null);
   const uid = useId();
 
-  const update = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const name = event.target.name as keyof Enquiry;
-    const next = { ...values, [name]: event.target.value };
+  const update = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setField(event.target.name as keyof Enquiry, event.target.value);
+
+  const setField = (name: keyof Enquiry, value: string) => {
+    const next = { ...values, [name]: value };
     setValues(next);
     // Edited after WhatsApp opened: the earlier link no longer matches the form.
     setHandoff(null);
@@ -108,20 +111,19 @@ export function EnquiryForm({ whatsappNumber }: { whatsappNumber: string | null 
           <input {...field("location")} type="text" autoComplete="off" placeholder="City, venue or ‘still dreaming’" />
           {error("location")}
         </Field>
-        <Field label="Type of celebration" htmlFor={`${uid}-celebration`}>
-          <div className="relative">
-            <select {...field("celebration")} className="field pr-8">
-              <option value="">Please choose</option>
-              {celebrationTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-            <svg aria-hidden="true" viewBox="0 0 12 8" className="pointer-events-none absolute right-1 top-1/2 h-2 w-3 -translate-y-1/2" fill="none" stroke="currentColor">
-              <path d="M1 1l5 5 5-5" />
-            </svg>
-          </div>
+        <Field label="Type of celebration" htmlFor={`${uid}-celebration`} labelId={`${uid}-celebration-label`}>
+          <CelebrationSelect
+            id={`${uid}-celebration`}
+            labelId={`${uid}-celebration-label`}
+            name="celebration"
+            value={values.celebration}
+            options={celebrationTypes}
+            placeholder="Select your celebration"
+            onChange={(value) => setField("celebration", value)}
+            onBlur={() => blur("celebration")}
+            invalid={Boolean(touched.celebration && errors.celebration)}
+            describedBy={touched.celebration && errors.celebration ? `${uid}-celebration-error` : undefined}
+          />
           {error("celebration")}
         </Field>
         <div className="sm:col-span-2">
@@ -175,10 +177,23 @@ export function EnquiryForm({ whatsappNumber }: { whatsappNumber: string | null 
   );
 }
 
-function Field({ label, htmlFor, required, children }: { label: string; htmlFor: string; required?: boolean; children: ReactNode }) {
+function Field({
+  label,
+  htmlFor,
+  labelId,
+  required,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  /** Set when the control is named by aria-labelledby (the custom dropdown). */
+  labelId?: string;
+  required?: boolean;
+  children: ReactNode;
+}) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="meta block text-[0.62rem] text-muted">
+      <label id={labelId} htmlFor={htmlFor} className="meta block text-[0.62rem] text-muted">
         {label}
         {required && <span aria-hidden="true"> *</span>}
       </label>

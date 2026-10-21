@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { emptyEnquiry, formatEnquiryDate, formatEnquiryMessage, validateEnquiry } from "../src/lib/enquiry.ts";
+import { celebrationTypes, emptyEnquiry, formatEnquiryDate, formatEnquiryMessage, validateEnquiry } from "../src/lib/enquiry.ts";
 import { resolveWhatsappUrl, whatsappChatUrl, whatsappNumber } from "../src/lib/whatsapp.ts";
 
 const read = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), "utf8");
@@ -35,6 +35,29 @@ test("optional fields are checked only when filled in", () => {
   assert.ok(validateEnquiry({ ...valid, phone: "call me" }).phone);
   assert.ok(validateEnquiry({ ...valid, date: "14/02/2027" }).date);
   assert.ok(validateEnquiry({ ...valid, celebration: "Birthday" }).celebration);
+});
+
+test("the celebration choices, in order; the field stays optional", () => {
+  assert.deepEqual([...celebrationTypes], ["Wedding", "Engagement", "Pre-Wedding / Couple Shoot", "Intimate Wedding / Elopement", "Other Enquiry"]);
+  assert.deepEqual(validateEnquiry({ ...valid, celebration: "" }), {}, "no choice is fine");
+  for (const type of celebrationTypes) assert.deepEqual(validateEnquiry({ ...valid, celebration: type }), {}, type);
+  for (const old of ["Elopement", "Intimate celebration", "Something else", "Select your celebration"]) {
+    assert.ok(validateEnquiry({ ...valid, celebration: old }).celebration, `${old} is not a choice`);
+  }
+  // The form offers exactly these, with the agreed placeholder.
+  const form = read("src/components/contact/EnquiryForm.tsx");
+  assert.match(form, /options=\{celebrationTypes\}/);
+  assert.match(form, /placeholder="Select your celebration"/);
+});
+
+test("each celebration choice appears verbatim in the WhatsApp message and survives URL encoding", () => {
+  for (const type of celebrationTypes) {
+    const message = formatEnquiryMessage({ ...valid, celebration: type });
+    assert.ok(message.includes(`*Type of celebration:* ${type}\n`), type);
+    assert.equal(new URL(whatsappChatUrl("917034671830", message)).searchParams.get("text"), message, type);
+  }
+  assert.ok(whatsappChatUrl("917034671830", formatEnquiryMessage({ ...valid, celebration: "Pre-Wedding / Couple Shoot" })).includes("Pre-Wedding%20%2F%20Couple%20Shoot"));
+  assert.ok(!formatEnquiryMessage({ ...valid, celebration: "" }).includes("Type of celebration"), "no choice → no line");
 });
 
 test("the form uses the exact number of the floating WhatsApp button", () => {

@@ -7,7 +7,14 @@
  * No imports, so it can be unit-tested directly with Node.
  */
 
-export const celebrationTypes = ["Wedding", "Elopement", "Intimate celebration", "Something else"] as const;
+/** The "Type of celebration" choices, in display order (the field is optional). */
+export const celebrationTypes = [
+  "Wedding",
+  "Engagement",
+  "Pre-Wedding / Couple Shoot",
+  "Intimate Wedding / Elopement",
+  "Other Enquiry",
+] as const;
 
 export type Enquiry = {
   name: string;
