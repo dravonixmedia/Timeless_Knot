@@ -114,8 +114,8 @@ folders, `story.json` fields and image guidelines.
 - `npm test` runs the manifest and gallery-composition tests.
 - Image positions without a photograph are left out of the page; there are no placeholder images or demo stories.
 
-**Homepage films:** upload H.264 MP4s (each under 25 MB, ideally under 15 MB), with optional same-name
-posters, to `public/media/home/films/` — they appear in the home page film section after the next
+**Homepage films:** upload H.264 MP4s (each under 25 MB, ideally under 15 MB), with posters generated
+automatically at build time (or your own same-name poster), to `public/media/home/films/` — they appear in the home page film section after the next
 deployment (one film plays alone; two or more become a collection). Order and titles live in an optional
 `films.json`. The original film in `public/media/home/video/` keeps working. With no films the section
 is hidden. See [docs/IMAGE-UPLOADS.md](docs/IMAGE-UPLOADS.md#homepage-films-homefilms).
