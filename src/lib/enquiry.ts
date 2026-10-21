@@ -1,6 +1,10 @@
 /**
- * Enquiry model and validation, shared by the contact form (client) and the
- * /api/enquiry route handler (server) so both enforce identical rules.
+ * Enquiry model, validation and the WhatsApp message the contact form
+ * prepares. Enquiries are sent through WhatsApp only: the form opens the
+ * studio's WhatsApp chat with this message filled in, and the visitor presses
+ * Send there. Nothing is stored, emailed or sent anywhere else.
+ *
+ * No imports, so it can be unit-tested directly with Node.
  */
 
 export const celebrationTypes = ["Wedding", "Elopement", "Intimate celebration", "Something else"] as const;
@@ -16,10 +20,6 @@ export type Enquiry = {
 };
 
 export type EnquiryErrors = Partial<Record<keyof Enquiry, string>>;
-
-export type EnquiryResult =
-  | { ok: true }
-  | { ok: false; reason: "demo" | "invalid" | "delivery"; errors?: EnquiryErrors };
 
 export const emptyEnquiry: Enquiry = {
   name: "",
@@ -50,18 +50,47 @@ export function validateEnquiry(input: Enquiry): EnquiryErrors {
   return errors;
 }
 
-/** Coerces unknown JSON into an Enquiry, trimming and bounding every field. */
-export function parseEnquiry(raw: unknown): Enquiry {
-  const source = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  const field = (key: keyof Enquiry, max: number) =>
-    typeof source[key] === "string" ? (source[key] as string).slice(0, max).trim() : "";
-  return {
-    name: field("name", 120),
-    email: field("email", 200),
-    phone: field("phone", 40),
-    date: field("date", 10),
-    location: field("location", 200),
-    celebration: field("celebration", 60),
-    message: field("message", 5001),
-  };
+/** "2027-02-14" → "14 February 2027" (the date as chosen, independent of time zone). */
+export function formatEnquiryDate(iso: string): string {
+  if (!DATE.test(iso)) return iso;
+  const date = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(date);
+}
+
+/** One line: surrounding space trimmed, inner runs of whitespace (including line breaks) collapsed. */
+const line = (value: string) => value.replace(/\s+/g, " ").trim();
+
+/**
+ * The enquiry as a WhatsApp message to the studio: a short greeting, every
+ * completed field on its own labelled line (labels in WhatsApp *bold*), then
+ * the visitor's story with its paragraphs kept. Empty optional fields are left
+ * out rather than shown blank.
+ */
+export function formatEnquiryMessage(input: Enquiry): string {
+  const details: [string, string][] = [
+    ["Name", line(input.name)],
+    ["Email", line(input.email)],
+    ["Phone", line(input.phone)],
+    ["Wedding date", input.date ? formatEnquiryDate(input.date.trim()) : ""],
+    ["Wedding location", line(input.location)],
+    ["Type of celebration", line(input.celebration)],
+  ];
+  const story = input.message
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((l) => l.trimEnd())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return [
+    "Hello Timeless Knot,",
+    "",
+    "I would like to enquire about your wedding photography and cinematography.",
+    "",
+    ...details.filter(([, value]) => value).map(([label, value]) => `*${label}:* ${value}`),
+    ...(story ? ["", "*Our story:*", story] : []),
+    "",
+    "— Sent from the enquiry form on the Timeless Knot website",
+  ].join("\n");
 }

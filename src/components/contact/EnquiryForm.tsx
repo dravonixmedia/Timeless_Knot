@@ -1,28 +1,26 @@
 "use client";
 
 import { useId, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
-import {
-  celebrationTypes,
-  emptyEnquiry,
-  validateEnquiry,
-  type Enquiry,
-  type EnquiryErrors,
-  type EnquiryResult,
-} from "@/lib/enquiry";
+import { celebrationTypes, emptyEnquiry, formatEnquiryMessage, validateEnquiry, type Enquiry, type EnquiryErrors } from "@/lib/enquiry";
+import { whatsappChatUrl } from "@/lib/whatsapp";
 import { Arrow } from "@/components/ui/Links";
 
-type Status = "idle" | "submitting" | "sent" | "demo" | "failed";
-
 /**
- * Contact form with honest states: "sent" is shown only after the server
- * confirms delivery. In demonstration mode nothing is transmitted and the
- * visitor is told so plainly.
+ * Contact form that sends enquiries through WhatsApp.
+ *
+ * On submit the fields are validated, then the studio's WhatsApp chat — the
+ * same number as the floating WhatsApp button — opens with the enquiry written
+ * out (the app on phones, WhatsApp Web on desktop). Nothing is sent until the
+ * visitor presses Send in WhatsApp, so the form never claims the enquiry has
+ * been delivered: it says WhatsApp is ready, keeps the details, and offers the
+ * link again in case WhatsApp did not open.
  */
-export function EnquiryForm({ live }: { live: boolean }) {
+export function EnquiryForm({ whatsappNumber }: { whatsappNumber: string | null }) {
   const [values, setValues] = useState<Enquiry>(emptyEnquiry);
   const [errors, setErrors] = useState<EnquiryErrors>({});
   const [touched, setTouched] = useState<Partial<Record<keyof Enquiry, boolean>>>({});
-  const [status, setStatus] = useState<Status>("idle");
+  /** The WhatsApp link last opened for this enquiry — shown again so it can be reopened. */
+  const [handoff, setHandoff] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
   const uid = useId();
@@ -31,6 +29,8 @@ export function EnquiryForm({ live }: { live: boolean }) {
     const name = event.target.name as keyof Enquiry;
     const next = { ...values, [name]: event.target.value };
     setValues(next);
+    // Edited after WhatsApp opened: the earlier link no longer matches the form.
+    setHandoff(null);
     if (touched[name]) setErrors(validateEnquiry(next));
   };
 
@@ -41,55 +41,29 @@ export function EnquiryForm({ live }: { live: boolean }) {
 
   const focusStatus = () => requestAnimationFrame(() => statusRef.current?.focus());
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (status === "submitting") return;
+    if (!whatsappNumber) return;
 
     const found = validateEnquiry(values);
     setErrors(found);
     setTouched(Object.fromEntries(Object.keys(values).map((k) => [k, true])));
     const firstInvalid = Object.keys(found)[0];
     if (firstInvalid) {
+      setHandoff(null);
       formRef.current?.querySelector<HTMLElement>(`[name="${firstInvalid}"]`)?.focus();
       return;
     }
 
-    setStatus("submitting");
-    const honeypot = new FormData(event.currentTarget).get("company");
-    try {
-      const res = await fetch("/api/enquiry", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, company: honeypot }),
-      });
-      const result = (await res.json().catch(() => ({ ok: false, reason: "delivery" }))) as EnquiryResult;
-      if (res.ok && result.ok) {
-        setStatus("sent");
-        setValues(emptyEnquiry);
-        setTouched({});
-      } else if (!result.ok && result.reason === "demo") {
-        setStatus("demo");
-      } else if (!result.ok && result.reason === "invalid" && result.errors) {
-        setErrors(result.errors);
-        setStatus("idle");
-      } else {
-        setStatus("failed");
-      }
-    } catch {
-      setStatus("failed");
-    }
+    // Opened directly in the submit handler so browsers treat it as the
+    // visitor's own action. A new tab keeps this page (and the details) open;
+    // where a new tab is blocked, this tab goes to WhatsApp instead.
+    const url = whatsappChatUrl(whatsappNumber, formatEnquiryMessage(values));
+    const opened = window.open(url, "_blank");
+    if (opened) opened.opener = null;
+    else window.location.assign(url);
+    setHandoff(url);
     focusStatus();
-  }
-
-  if (status === "sent") {
-    return (
-      <div ref={statusRef} tabIndex={-1} role="status" className="border-t border-charcoal/15 py-16 outline-none">
-        <p className="display-md italic">Thank you.</p>
-        <p className="body-lg mt-6 max-w-[42ch] text-muted">
-          Your story has reached us. We will read it carefully and be in touch soon.
-        </p>
-      </div>
-    );
   }
 
   const field = (name: keyof Enquiry) => ({
@@ -111,13 +85,7 @@ export function EnquiryForm({ live }: { live: boolean }) {
     ) : null;
 
   return (
-    <form ref={formRef} noValidate onSubmit={submit} aria-describedby={!live ? `${uid}-demo` : undefined}>
-      {!live && (
-        <p id={`${uid}-demo`} className="mb-12 border-l border-olive/60 bg-pale-sage/60 px-5 py-4 text-[0.88rem] text-charcoal">
-          <strong className="font-medium">Demonstration mode.</strong> This form is not yet connected to the studio, so
-          enquiries cannot be sent from this page at the moment.
-        </p>
-      )}
+    <form ref={formRef} noValidate onSubmit={submit} aria-describedby={`${uid}-how`}>
 
       <div className="grid gap-x-10 gap-y-10 sm:grid-cols-2">
         <Field label="Full name" htmlFor={`${uid}-name`} required>
@@ -164,40 +132,43 @@ export function EnquiryForm({ live }: { live: boolean }) {
         </div>
       </div>
 
-      {/* Honeypot — hidden from people and assistive technology */}
-      <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
-        <label>
-          Company
-          <input type="text" name="company" tabIndex={-1} autoComplete="off" defaultValue="" />
-        </label>
-      </div>
-
       <div className="mt-14 flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-[0.8rem] text-muted">
-          Fields marked <span aria-hidden="true">*</span>
-          <span className="sr-only">with an asterisk</span> are required.
-        </p>
+        <div className="max-w-[34ch] space-y-2 text-[0.8rem] text-muted">
+          <p>
+            Fields marked <span aria-hidden="true">*</span>
+            <span className="sr-only">with an asterisk</span> are required.
+          </p>
+          <p id={`${uid}-how`}>
+            {whatsappNumber
+              ? "Your enquiry opens in WhatsApp, ready for you to send to our studio."
+              : "Enquiries are sent through WhatsApp, which is not available on this page at the moment."}
+          </p>
+        </div>
         <button
           type="submit"
-          disabled={status === "submitting"}
-          className="group meta inline-flex min-h-12 items-center gap-4 bg-forest px-8 py-4 text-[0.7rem] tracking-[0.24em] text-ivory transition-colors duration-500 hover:bg-charcoal disabled:cursor-wait disabled:opacity-70"
+          disabled={!whatsappNumber}
+          className="group meta inline-flex min-h-12 items-center gap-4 bg-forest px-8 py-4 text-[0.7rem] tracking-[0.24em] text-ivory transition-colors duration-500 hover:bg-charcoal disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <span>{status === "submitting" ? "Sending…" : "Send your story"}</span>
-          {status !== "submitting" && <Arrow />}
+          <span>Send Enquiry via WhatsApp</span>
+          <span className="sr-only">(opens WhatsApp)</span>
+          <Arrow />
         </button>
       </div>
 
       <div ref={statusRef} tabIndex={-1} aria-live="polite" className="outline-none">
-        {status === "demo" && (
-          <p className="mt-8 border-l border-error/60 pl-5 text-[0.9rem] text-charcoal">
-            Your message has <strong className="font-medium">not</strong> been sent — the enquiry service is not yet
-            connected. Your details are still in the form.
-          </p>
-        )}
-        {status === "failed" && (
-          <p className="mt-8 border-l border-error/60 pl-5 text-[0.9rem] text-error">
-            We couldn’t send your message just now. Please check your connection and try again in a moment.
-          </p>
+        {handoff && (
+          <div className="mt-8 border-l border-olive/60 pl-5 text-[0.9rem] text-charcoal">
+            <p>
+              <strong className="font-medium">Almost there — your enquiry is ready in WhatsApp.</strong> It has not been
+              sent yet: please check it and press <strong className="font-medium">Send</strong> in WhatsApp to deliver it to us.
+            </p>
+            <p className="mt-3 text-muted">
+              WhatsApp didn’t open?{" "}
+              <a href={handoff} target="_blank" rel="noopener noreferrer" className="link-draw text-charcoal">
+                Open WhatsApp with your enquiry
+              </a>
+            </p>
+          </div>
         )}
       </div>
     </form>

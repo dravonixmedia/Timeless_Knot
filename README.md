@@ -28,12 +28,12 @@ Copy `.env.example` to `.env.local` and fill in:
 | Variable | Purpose |
 | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | **Optional build variable — normally leave it unset.** The canonical production origin is `https://timelessknot.in` (`DEFAULT_CANONICAL_ORIGIN` in `src/lib/indexing.ts`). It drives canonical URLs, sitemap, robots.txt, Open Graph, structured data and the Worker's host rules: only the canonical host is indexable, `timelessknot.dravonix.dev` and `www.timelessknot.in` 301 to it, and every other host (previews, workers.dev, localhost) gets `X-Robots-Tag: noindex, nofollow`. A value that is not a bare HTTPS origin, or that names a redirect-only host, fails the build. See [docs/DOMAIN-MIGRATION.md](docs/DOMAIN-MIGRATION.md). |
-| `ENQUIRY_WEBHOOK_URL` | Server-side endpoint that receives contact enquiries as JSON. **Not configured yet: the contact form is not connected to any production enquiry destination.** It runs in clearly labelled demonstration mode, sends nothing and never reports a false success. Enquiries currently arrive only through WhatsApp. Needed both as a build variable (the page shows the form as live) and as a runtime secret (the API forwards to it). |
 | `NEXT_PUBLIC_WHATSAPP_URL` | *Optional* fallback for the WhatsApp link — see **WhatsApp** below. Read at build time. |
 
 ## WhatsApp
 
-One direct link drives the floating WhatsApp button, the footer link and the contact-page link.
+One direct link drives the floating WhatsApp button, the footer link, the contact-page link and the
+contact form's enquiries.
 Set it in **`src/config/site.ts`**:
 
 ```ts
@@ -49,6 +49,13 @@ const WHATSAPP_URL: string | null = "https://wa.me/919876543210";
 - Alternative: leave it `null` and set `NEXT_PUBLIC_WHATSAPP_URL` as a Cloudflare **Build**
   variable. Pages are prerendered at build time, so a *runtime* variable has no effect.
 - The button is intentionally hidden on `/contact`, which has its own form and WhatsApp link.
+- **Contact form → WhatsApp.** The enquiry form sends through WhatsApp only, to this same number.
+  On *Send Enquiry via WhatsApp* the fields are validated and WhatsApp opens (the app on phones,
+  WhatsApp Web on desktop) with the enquiry written out (`formatEnquiryMessage` in
+  `src/lib/enquiry.ts`). The enquiry is delivered only when the visitor presses **Send** in
+  WhatsApp. Nothing is stored, emailed or sent to a server, and the form says so rather than
+  claiming success. A WhatsApp Business short link (`wa.me/message/…`) cannot carry a message, so
+  with one configured the form explains that it is unavailable — use a number link.
 
 ## Deploying to Cloudflare Workers
 
@@ -69,8 +76,8 @@ Cloudflare dashboard → Workers & Pages → `timeless-knot` → Settings → Bu
 | Build command | `npx opennextjs-cloudflare build` |
 | Deploy command | `npx opennextjs-cloudflare deploy` |
 | Non-production branch deploy command | `npm run deploy:preview` — builds with OpenNext, copies the prerendered pages into the assets, then runs `wrangler preview`. Cloudflare runs only the install step before this command for preview builds, so a bare `npx wrangler preview` has no `.open-next/worker.js` to deploy. Bindings come from the `previews` block in `wrangler.jsonc`. |
-| Build variables | `ENQUIRY_WEBHOOK_URL` (when available); `NEXT_PUBLIC_WHATSAPP_URL` only if not set in code. `NEXT_PUBLIC_SITE_URL` is not needed — remove it, or it must be exactly `https://timelessknot.in` ([docs/DOMAIN-MIGRATION.md](docs/DOMAIN-MIGRATION.md)) |
-| Runtime variables / secrets | `ENQUIRY_WEBHOOK_URL` (when available) |
+| Build variables | `NEXT_PUBLIC_WHATSAPP_URL` only if not set in code. `NEXT_PUBLIC_SITE_URL` is not needed — remove it, or it must be exactly `https://timelessknot.in` ([docs/DOMAIN-MIGRATION.md](docs/DOMAIN-MIGRATION.md)) |
+| Runtime variables / secrets | none |
 
 - Use `opennextjs-cloudflare deploy`, **not** a bare `wrangler deploy`: it first copies the prerendered
   pages into the Worker's static assets (the read-only cache configured in `open-next.config.ts`).
@@ -85,7 +92,7 @@ Cloudflare dashboard → Workers & Pages → `timeless-knot` → Settings → Bu
 ```
 src/
   app/                    routes: /, /our-story, /stories, /stories/[slug], /experience, /contact,
-                          404, sitemap, robots, OG image, /api/enquiry
+                          404, sitemap, robots, OG image, /film/[file] (range-request film stream)
   config/site.ts          confirmed business facts (name, tagline, contact, socials, logo, nav)
   content/
     types.ts              CMS-ready content model (WeddingStory, Media, Film, GalleryBlock)

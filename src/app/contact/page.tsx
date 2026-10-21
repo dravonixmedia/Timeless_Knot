@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { site } from "@/config/site";
+import { whatsappNumber } from "@/lib/whatsapp";
 import { imagery } from "@/content/imagery";
 import { Page } from "@/components/layout/Page";
 import { Picture } from "@/components/media/Picture";
@@ -48,7 +49,6 @@ const faqs: { question: string; answer: string; link?: { href: string; label: st
 ];
 
 export default function ContactPage() {
-  const live = Boolean(process.env.ENQUIRY_WEBHOOK_URL);
   const { email, phone, whatsapp } = site.contact;
 
   return (
@@ -121,7 +121,7 @@ export default function ContactPage() {
           </div>
 
           <div className="intro-fade col-span-12 lg:col-span-6 lg:col-start-7 lg:pt-6" style={{ ["--delay" as string]: "0.6s" }}>
-            <EnquiryForm live={live} />
+            <EnquiryForm whatsappNumber={whatsappNumber(whatsapp)} />
           </div>
         </div>
       </section>
