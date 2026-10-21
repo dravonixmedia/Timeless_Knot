@@ -1,23 +1,22 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { getHomeVideo } from "@/content/media";
+import { getHomeFilms } from "@/content/media";
 import { parseRange, sliceStream } from "@/lib/byte-range";
 
 /**
- * Streams the homepage film with HTTP range support.
+ * Streams the homepage films with HTTP range support.
  *
- * The MP4 itself is a static asset (public/media/home/video/). Safari and iOS
+ * Each MP4 is a static asset (public/media/home/video/ or home/films/). Safari and iOS
  * only play video from a server that answers Range requests with 206 Partial
  * Content, which the Workers static-asset server cannot be relied on to do, so
  * the player loads it through this route: it reads the asset from the ASSETS
- * binding and returns exactly the requested bytes. Only the one video selected
- * by the media manifest is served; anything else is a 404.
+ * binding and returns exactly the requested bytes. Only films published in the
+ * media manifest are served (filenames are unique across them); anything else
+ * is a 404.
  */
 export async function GET(request: Request, { params }: RouteContext<"/film/[file]">) {
-  const video = getHomeVideo();
   const { file } = await params;
-  if (!video || decodeURIComponent(video.src.split("/").pop() ?? "") !== file) {
-    return new Response("Not found", { status: 404 });
-  }
+  const video = getHomeFilms().find((film) => decodeURIComponent(film.src.split("/").pop() ?? "") === file);
+  if (!video) return new Response("Not found", { status: 404 });
 
   const assetUrl = new URL(video.src, request.url);
   let asset: Response;

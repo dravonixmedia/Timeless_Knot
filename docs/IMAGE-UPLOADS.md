@@ -1,4 +1,4 @@
-# Uploading photographs and the homepage film — Timeless Knot
+# Uploading photographs and the homepage films — Timeless Knot
 
 Photographs are managed entirely through folders in this repository. Upload
 images to the right folder, merge to `main`, and Cloudflare rebuilds the site.
@@ -29,7 +29,8 @@ public/media/
 │   ├── featured/      Home page photographs: “The Art of Remembering” portrait,
 │   │                  the full-width “Moments Pass” photograph and the two small
 │   │                  photographs beside the closing invitation (on every page)
-│   └── video/         Home page cinematic film (one MP4 + optional poster) — see below
+│   ├── films/         Home page film collection (any number of MP4s + optional posters) — see below
+│   └── video/         The original homepage film (one MP4 + optional poster)
 ├── about/             Our Story page (4 photographs)
 ├── experience/        The Experience page (2 photographs)
 ├── contact/           Contact page portrait (1 photograph)
@@ -70,9 +71,17 @@ public/media/
 - Removing a photo from the folder removes it from the website on the next deployment.
 - **Home page portfolio cards.** Each category that has photos gets one card in
   the home page "Moments Worth Remembering" section, linking to
-  `/stories?category=<folder>`. The card shows the category's first **portrait**
-  photograph (in the gallery order above) in a 4:5 frame — a 4:5 portrait is
-  shown uncropped — or the first photograph if the folder has no portraits.
+  `/stories?category=<folder>`. The cards form an editorial composition, not an
+  even row: on desktop each photograph has its own width and starts at a
+  different height; on tablets they sit in two staggered columns; on phones
+  they alternate in width. Every photograph keeps **its own proportions** (no
+  4:5 crop). Each position prefers a shape: Weddings and Pre-Wedding a
+  **portrait** (4:5–3:4), Couples and Beyond the Frame a **taller** photograph
+  (3:4–2:3). The card uses the **first photograph of that shape in the
+  category's order**, else its first portrait, else its first photograph. To
+  choose a different card photograph, move it to the front with `"order"` in
+  that folder's `images.json`. With three categories (an empty Beyond the Frame
+  folder) the composition rebalances for three — no empty slot.
   An empty folder has no card and no filter. With all four categories the cards
   sit four in a row on desktop, 2 × 2 on tablets and one per row on phones.
 - `beyond-the-frame/` is a gallery only: it never contains stories and does not
@@ -132,26 +141,73 @@ public/media/weddings/anika-and-rohan/
   (the Portfolio stays visible), and the home page shows one photograph from each
   portfolio category instead of featured stories.
 
-## Homepage film (`home/video/`)
+## Homepage films (`home/films/`)
 
-The “Love, In Motion” section on the home page plays the film uploaded to:
+The “Love, In Motion” section on the home page plays the films uploaded to:
 
 ```
-public/media/home/video/
+public/media/home/films/      ← the film collection (any number of films)
+public/media/home/video/      ← the original single film (still supported)
 ```
 
-**With no valid video in this folder the whole section is hidden** — no
-placeholder, no play button, no gap. Upload a video and it appears
-automatically after the next deployment.
+- **No films:** the whole section is hidden — no placeholder, no play button, no gap.
+- **One film:** it plays on its own, exactly as before.
+- **Two or more:** the first is the featured film in the large player, and every
+  film is listed beneath it in a quiet strip (poster, title, running time) that
+  scrolls sideways — swipe on phones. Choosing a film stops the current one and
+  plays the chosen one; only one film ever plays.
 
 ### Uploading
 
-1. On GitHub open `public/media/home/video/` → **Add file → Upload files**.
-2. Upload the **MP4** (and, optionally, a poster image — see below).
+1. On GitHub open `public/media/home/films/` → **Add file → Upload files**.
+2. Upload the **MP4** — and, optionally, a poster image with the **same name**
+   (`ceremony.mp4` + `ceremony.jpg`).
 3. Commit to a branch, open a pull request, review and merge into `main`.
-4. Cloudflare rebuilds the site; when the deployment succeeds the film is live.
-   The build log shows the result, e.g.
-   `[media] … home video: 01-timeless-knot-film.mp4 (1920×1080, 14.2 MB, poster)`.
+4. Cloudflare rebuilds the site; when the deployment succeeds the films are live.
+   The build log lists them, e.g.
+   `[media] … home films: V 01.mp4 (960×720, 4.7 MB), ceremony.mp4 (1920×1080, 12.1 MB, poster)`.
+
+### Order, featured film and titles — `films.json`
+
+Without settings, the original film in `home/video/` comes first (it stays the
+featured film), followed by `home/films/` in filename order (`01-…` before
+`02-…`, `2` before `10`). To choose the order and add titles, add
+`public/media/home/films/films.json`:
+
+```json
+{
+  "order": ["ceremony.mp4", "V 01.mp4", "reception.mp4"],
+  "ceremony.mp4": "Wedding Film 01",
+  "V 01.mp4": "Wedding Film 02"
+}
+```
+
+- `"order"` lists filenames, **featured film first**; any film not listed follows
+  in the default order. It can include the original film by its filename.
+- A filename with a text value is that film's **title**. Without a title the
+  tidied filename is shown (`wedding-film-02.mp4` → “Wedding Film 02”), so name
+  files the way you would like them read. Titles are never invented.
+- Names in `films.json` that match no published film are reported in the build log.
+
+### Posters
+
+A still from the film, saved as a JPG (or PNG/WebP/AVIF) with the **same name as
+the film**. It is shown before the film plays and as the film's preview in the
+strip. Without one, the player shows the film's first frame and the strip shows
+a numbered tile — no video is downloaded just to make a preview, and nothing is
+generated. Recommended: 1920×1080 (16:9), under 500 KB.
+
+### The original `home/video/` film
+
+Still supported and left where it is: the first valid MP4 there (by name) joins
+the collection, with an optional poster of the same name or `poster.jpg`.
+
+- **The same film in both folders is shown once.** A copy in `home/films/`
+  takes over (with its title and position), and the `home/video/` copy is then
+  not uploaded — you can delete it whenever convenient.
+- Film addresses use the filename, so a **different** film in `home/films/` must
+  not share the original's filename; the build reports it and leaves it out until
+  renamed.
 
 ### Export settings
 
@@ -169,31 +225,34 @@ automatically after the next deployment.
 HandBrake: preset *Web → Vimeo YouTube HQ 1080p30*, tick **Web Optimized**.
 FFmpeg: `ffmpeg -i master.mov -c:v libx264 -preset slow -crf 23 -maxrate 6M -bufsize 12M -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart 01-timeless-knot-film.mp4`
 
-### Filenames and the poster
+### Filenames
 
-- Use lowercase words with a number prefix, e.g. `01-timeless-knot-film.mp4`.
-- **Only one film is shown.** If the folder holds several MP4s, the first by
-  name is used (`01-…` before `02-…`); the others are not published.
-- **Poster (optional, recommended):** a still from the film, saved as a JPG with
-  the **same name as the video** (`01-timeless-knot-film.jpg`) or named
-  `poster.jpg`. It shows while the film loads and for visitors who prefer reduced
-  motion. Without a poster the film’s first frame is used — nothing is generated.
+- Use lowercase words, optionally with a number prefix to set the default order,
+  e.g. `01-wedding-film.mp4`. Avoid reusing the original film's filename.
 
-### Replacing or removing the film
+### Replacing or removing a film
 
 - **Replace:** upload the new MP4 (with its poster) and delete the old files in
-  the same pull request. Keeping the same filename is fine — the site detects
+  the same pull request (update `films.json` if it names the old file). Keeping the same filename is fine — the site detects
   the new content and every visitor gets the new version after the deployment.
-- **Remove:** delete the MP4 (and poster) from the folder and merge. After the
-  deployment the film section disappears from the home page.
+- **Remove:** delete the MP4 (and poster) and merge. When no film is left in
+  either folder, the film section disappears from the home page.
 
 ### How it plays
 
-Muted, looping and inline (no full-screen takeover on phones), starting only
-when the section scrolls into view — nothing is downloaded before then. It
-pauses when scrolled away. Visitors get **Play/Pause** and **Sound on/off**
-controls. With “reduce motion” or Data Saver turned on, it does not autoplay:
-the poster is shown with a Play button.
+The featured film plays muted, looping and inline (no full-screen takeover on
+phones), starting only when the section scrolls into view — nothing is
+downloaded before then, and only the featured film is ever downloaded. It
+pauses when scrolled away. Visitors get **Play/Pause**, **Sound on/off** (when
+the film has audio) and **Full screen** (iPhone uses its own video player).
+Sound never starts by itself; once a visitor turns it on, a film they choose
+next keeps it on. With “reduce motion” or Data Saver turned on, nothing
+autoplays: the poster is shown with a Play button.
+
+**Browser support.** H.264 MP4 with AAC audio plays in Safari (macOS and iOS),
+Chrome, Edge, Firefox and Android browsers. Other codecs (HEVC/H.265, ProRes,
+VP9/AV1) and other containers (.mov, .webm, .mkv) are skipped by the build
+with a message, because some of those browsers cannot play them.
 
 ## `story.json`
 
@@ -262,10 +321,12 @@ site — fields you leave out are simply not shown.
 
 ## Developers
 
-- Homepage film: the MP4 is validated at build time by `scripts/media/read-mp4.mjs`
-  (H.264, dimensions, fast start) and streamed through `src/app/film/[file]/route.ts`,
-  which answers HTTP range requests with `206 Partial Content` (required by Safari / iOS).
-  Player: `src/components/film/HomeFilm.tsx`.
+- Homepage films: each MP4 is validated at build time by `scripts/media/read-mp4.mjs`
+  (H.264, dimensions, fast start), collected by `selectHomeFilms` in the generator
+  (order, titles, posters, duplicates) and streamed through `src/app/film/[file]/route.ts`,
+  which answers HTTP range requests with `206 Partial Content` (required by Safari / iOS)
+  for any published film. Player: `src/components/film/HomeFilm.tsx`; collection:
+  `src/components/film/FilmShowcase.tsx`.
 - Generator: `scripts/media/generate-image-manifest.mjs` (runs in `npm run build`,
   `npm run dev` and after `npm install`). Output: `src/content/generated/media-manifest.json`,
   `public/.assetsignore` and `public/media-cache/` (all generated, not committed).

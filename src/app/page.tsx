@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { site } from "@/config/site";
 import { imagery, showreel } from "@/content/imagery";
-import { getCategoryGalleries, getHomeVideo } from "@/content/media";
+import { getCategoryGalleries, getHomeFilms } from "@/content/media";
 import type { Media } from "@/content/types";
 import { portfolioCategoryHref } from "@/lib/portfolio";
 import { getFeaturedStories, getShowcaseFilm } from "@/content/stories";
@@ -12,6 +12,7 @@ import { Parallax } from "@/components/motion/Parallax";
 import { EucalyptusSprig } from "@/components/brand/Botanical";
 import { FilmPlayer } from "@/components/film/FilmPlayer";
 import { HomeFilm } from "@/components/film/HomeFilm";
+import { FilmShowcase } from "@/components/film/FilmShowcase";
 import { StoryCard } from "@/components/stories/StoryCard";
 import { Invitation } from "@/components/sections/Invitation";
 import { ArrowLink, ButtonLink } from "@/components/ui/Links";
@@ -217,29 +218,87 @@ function FeaturedStories() {
 
 /* 03b — Portfolio highlights ---------------------------------------------- */
 
-/** Column layouts by number of categories with photographs (class names must be literal for Tailwind). */
-const highlightGrid: Record<number, { grid: string; sizes: string }> = {
-  1: { grid: "sm:grid-cols-2 lg:grid-cols-3", sizes: "(min-width: 1024px) 31vw, (min-width: 640px) 47vw, 100vw" },
-  2: { grid: "sm:grid-cols-2", sizes: "(min-width: 640px) 47vw, 100vw" },
-  3: { grid: "sm:grid-cols-3", sizes: "(min-width: 640px) 31vw, 100vw" },
-  4: { grid: "sm:grid-cols-2 lg:grid-cols-4", sizes: "(min-width: 1024px) 23vw, (min-width: 640px) 47vw, 100vw" },
+/**
+ * Editorial composition of the category photographs, by how many categories
+ * have photographs (class names must be literal for Tailwind).
+ *
+ * Desktop: one row of unequal columns, each photograph at its own height and
+ * starting at a different depth, so their tops and bottoms never line up.
+ * Tablet: two columns, the right-hand one set lower by a transform, so rows
+ * keep their own height and no gap opens beneath the left-hand photographs
+ * (with three categories the last photograph closes the composition, centred). Phone: one column whose
+ * photographs alternate in width and alignment. Every photograph keeps its own
+ * proportions; only the column widths and vertical offsets vary.
+ */
+type Slot = { className: string; sizes: string; shape: "portrait" | "tall" };
+
+const compositions: Record<number, { grid: string; slots: Slot[] }> = {
+  1: {
+    grid: "sm:mx-auto sm:w-[60%] lg:w-[40%]",
+    slots: [{ className: "", shape: "portrait", sizes: "(min-width: 1024px) 38vw, (min-width: 640px) 58vw, 92vw" }],
+  },
+  2: {
+    grid: "sm:grid-cols-2 sm:gap-x-6 sm:pb-20 lg:mx-auto lg:w-[84%] lg:grid-cols-[1.15fr_0.85fr] lg:gap-x-12 lg:pb-0",
+    slots: [
+      { className: "", shape: "portrait", sizes: "(min-width: 1024px) 45vw, (min-width: 640px) 46vw, 92vw" },
+      { className: "ml-auto w-[84%] sm:w-full sm:translate-y-20 lg:mt-36 lg:translate-y-0", shape: "tall", sizes: "(min-width: 1024px) 33vw, (min-width: 640px) 46vw, 78vw" },
+    ],
+  },
+  3: {
+    grid: "sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-[1.2fr_0.92fr_1fr] lg:gap-x-12",
+    slots: [
+      { className: "", shape: "portrait", sizes: "(min-width: 1024px) 36vw, (min-width: 640px) 46vw, 92vw" },
+      { className: "ml-auto w-[82%] sm:mt-14 sm:w-[90%] lg:ml-0 lg:mt-40 lg:w-full", shape: "portrait", sizes: "(min-width: 1024px) 28vw, (min-width: 640px) 42vw, 76vw" },
+      {
+        className: "w-[90%] sm:col-span-2 sm:mx-auto sm:w-[56%] lg:col-span-1 lg:mx-0 lg:mt-14 lg:w-full",
+        shape: "tall",
+        sizes: "(min-width: 1024px) 30vw, (min-width: 640px) 52vw, 84vw",
+      },
+    ],
+  },
+  4: {
+    grid: "sm:grid-cols-2 sm:gap-x-6 sm:pb-20 lg:grid-cols-[1.15fr_0.9fr_1fr_0.85fr] lg:gap-x-10 lg:pb-0",
+    slots: [
+      { className: "", shape: "portrait", sizes: "(min-width: 1024px) 29vw, (min-width: 640px) 46vw, 92vw" },
+      { className: "ml-auto w-[82%] sm:w-[90%] sm:translate-y-20 lg:ml-0 lg:mt-40 lg:w-full lg:translate-y-0", shape: "portrait", sizes: "(min-width: 1024px) 23vw, (min-width: 640px) 42vw, 76vw" },
+      { className: "w-[90%] sm:w-full lg:mt-14", shape: "tall", sizes: "(min-width: 1024px) 25vw, (min-width: 640px) 46vw, 84vw" },
+      { className: "ml-auto w-[76%] sm:w-[88%] sm:translate-y-20 lg:ml-0 lg:mt-30 lg:w-full lg:translate-y-0", shape: "tall", sizes: "(min-width: 1024px) 21vw, (min-width: 640px) 41vw, 70vw" },
+    ],
+  },
 };
 
-/** The card photograph: the category's first portrait (cards are 4:5), else its first photograph. */
-const coverFor = (images: Media[]) => images.find((m) => m.width / m.height < 0.9) ?? images[0];
+const ratio = (m: Media) => m.width / m.height;
+
+/**
+ * The category's photograph for its slot: the first in the category's own
+ * order with the slot's shape (portrait 4:5–3:4, or tall 3:4–2:3), else its
+ * first portrait, else its first photograph.
+ */
+const coverFor = (images: Media[], shape: Slot["shape"]) =>
+  images.find((m) => (shape === "tall" ? ratio(m) >= 0.6 && ratio(m) <= 0.76 : ratio(m) >= 0.74 && ratio(m) <= 0.86)) ??
+  images.find((m) => ratio(m) < 0.9) ??
+  images[0];
+
+/** Frame proportions: the photograph's own, kept within a range so one extreme image cannot unbalance the row. */
+const frameRatio = (m: Media) => Math.min(1.5, Math.max(0.6, ratio(m)));
 
 /**
  * Until real stories are published, the home page shows one photograph from
- * each portfolio category as a single row of equal cards (2 × 2 on tablet, one
- * column on phones). A category without photographs simply has no card.
+ * each portfolio category as an editorial composition (see `compositions`).
+ * A category without photographs simply has no card, and the composition for
+ * the remaining number is used — never an empty slot or placeholder.
  */
 function PortfolioHighlights() {
   if (getFeaturedStories(1).length > 0) return null;
-  const picks = getCategoryGalleries()
-    .map((gallery) => ({ key: gallery.key, title: gallery.title, image: coverFor(gallery.images) }))
-    .slice(0, 4);
-  if (picks.length === 0) return null;
-  const layout = highlightGrid[picks.length];
+  const galleries = getCategoryGalleries().slice(0, 4);
+  if (galleries.length === 0) return null;
+  const layout = compositions[galleries.length];
+  const picks = galleries.map((gallery, i) => ({
+    key: gallery.key,
+    title: gallery.title,
+    slot: layout.slots[i],
+    image: coverFor(gallery.images, layout.slots[i].shape),
+  }));
 
   return (
     <section aria-labelledby="portfolio-title" className="bg-porcelain pb-[var(--section)]">
@@ -257,15 +316,15 @@ function PortfolioHighlights() {
           </p>
         </div>
 
-        <ul className={`mt-16 grid grid-cols-1 gap-x-6 gap-y-12 lg:mt-24 lg:gap-x-8 ${layout.grid}`}>
+        <ul className={`mt-16 grid grid-cols-1 items-start gap-y-14 sm:gap-y-16 lg:mt-24 ${layout.grid}`}>
           {picks.map((pick, i) => (
-            <li key={pick.key}>
+            <li key={pick.key} className={pick.slot.className}>
               {/* The whole card opens that category in the portfolio (/stories?category=…). */}
               <Link href={portfolioCategoryHref(pick.key)} aria-label={`View the ${pick.title} portfolio`} className="group block">
                 <div {...reveal("mask", i * 0.1)}>
-                  {/* Equal 4:5 frames so the four read as one collection; focal points are honoured. */}
-                  <div className="relative aspect-[4/5] overflow-hidden">
-                    <Picture media={pick.image} layout="fill" sizes={layout.sizes} imageClassName="zoom-media" />
+                  {/* The photograph's own proportions (space reserved before it loads); focal points are honoured. */}
+                  <div className="relative overflow-hidden" style={{ aspectRatio: frameRatio(pick.image) }}>
+                    <Picture media={pick.image} layout="fill" sizes={pick.slot.sizes} imageClassName="zoom-media" />
                   </div>
                 </div>
                 <span
@@ -316,12 +375,14 @@ function Philosophy() {
 /* 05 — Cinematic films --------------------------------------------------- */
 
 function Films() {
-  // The film uploaded to public/media/home/video/ comes first, then a configured
-  // showreel or a published story's film. With none, the section is left out
-  // entirely — no placeholder frame, no play button, no gap.
-  const video = getHomeVideo();
-  const film = video ? undefined : (showreel ?? getShowcaseFilm());
-  if (!video && !film) return null;
+  // Films uploaded to public/media/home/films/ (and the original home/video/
+  // film) come first: one film plays on its own, two or more become a
+  // collection. Without any, a configured showreel or a published story's film
+  // is used; with none at all the section is left out — no placeholder frame,
+  // no play button, no gap.
+  const films = getHomeFilms();
+  const film = films.length ? undefined : (showreel ?? getShowcaseFilm());
+  if (!films.length && !film) return null;
   return (
     <section aria-labelledby="films-title" className="bg-forest text-ivory section-y">
       <div className="frame">
@@ -337,9 +398,15 @@ function Films() {
           </p>
         </div>
 
-        <div className="mt-16 lg:mt-24" {...reveal("mask")}>
-          {video ? <HomeFilm video={video} /> : film && <FilmPlayer film={film} />}
-        </div>
+        {films.length > 1 ? (
+          <div className="mt-16 lg:mt-24">
+            <FilmShowcase films={films} />
+          </div>
+        ) : (
+          <div className="mt-16 lg:mt-24" {...reveal("mask")}>
+            {films.length ? <HomeFilm video={films[0]} /> : film && <FilmPlayer film={film} />}
+          </div>
+        )}
       </div>
     </section>
   );

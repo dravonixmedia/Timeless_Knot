@@ -353,6 +353,17 @@ html.lenis body {
   }
 }
 
+/* Film collection: the chosen film fades in where the previous one was. */
+@keyframes film-swap {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .film-swap {
+    animation: film-swap 0.8s var(--ease-soft) both;
+  }
+}
+
 /* ==========================================================================
    PAGE TRANSITIONS — React <ViewTransition>
    ========================================================================== */
