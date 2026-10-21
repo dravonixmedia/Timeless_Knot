@@ -7,9 +7,11 @@
  * 1. Optimised photographs (/_next/image) are stored in Cloudflare's edge
  *    cache, so each size/format of a photograph is transformed by the Images
  *    binding once per data centre instead of on every request.
- * 2. Every response served from a host other than production (workers.dev,
- *    preview URLs, localhost) carries `X-Robots-Tag: noindex, nofollow`, so
- *    previews are never indexed. Production responses are left unchanged.
+ * 2. Host rules (src/lib/indexing.ts): the canonical host is served unchanged;
+ *    a listed legacy/alias host that is not canonical permanently redirects
+ *    to the canonical domain; every other host (workers.dev, preview URLs,
+ *    localhost, a domain not yet made canonical) carries
+ *    `X-Robots-Tag: noindex, nofollow`, so it is never indexed.
  *
  * Only content-addressed sources (/media-cache/<hash>/…, written at build time
  * by scripts/media/generate-image-manifest.mjs) whose response OpenNext marked
@@ -23,7 +25,9 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import openNextWorker from "./.open-next/worker.js";
-import { isProductionHost } from "./src/lib/indexing";
+import { decideHost, resolveCanonicalOrigin } from "./src/lib/indexing";
+// Written at build time from NEXT_PUBLIC_SITE_URL — the same value the pages use.
+import siteConfig from "./src/content/generated/site-config.json";
 
 type Ctx = { waitUntil(promise: Promise<unknown>): void; passThroughOnException?(): void };
 type Handler = { fetch(request: Request, env: unknown, ctx: Ctx): Promise<Response> };
@@ -32,11 +36,19 @@ const worker = openNextWorker as Handler;
 /** Must match `images.formats` in next.config.ts, in the same order (OpenNext picks the first the browser accepts). */
 const FORMATS = ["image/avif", "image/webp"];
 
-/** Keeps non-production hosts out of search engines (see src/lib/indexing.ts). */
+const CANONICAL_ORIGIN = resolveCanonicalOrigin(siteConfig.siteUrl);
+
+/** Applies the host rules (see src/lib/indexing.ts) around every response. */
 const handler: Handler = {
   async fetch(request, env, ctx) {
+    const decision = decideHost(new URL(request.url), CANONICAL_ORIGIN);
+    if (decision.action === "redirect") {
+      // 301 for page loads; 308 keeps the method and body of anything else (e.g. a form POST).
+      const status = request.method === "GET" || request.method === "HEAD" ? 301 : 308;
+      return new Response(null, { status, headers: { Location: decision.location } });
+    }
     const response = await serve(request, env, ctx);
-    if (isProductionHost(new URL(request.url).hostname)) return response;
+    if (decision.indexable) return response;
     const marked = new Response(response.body, response);
     marked.headers.set("X-Robots-Tag", "noindex, nofollow");
     return marked;
