@@ -3,8 +3,8 @@
  * Timeless Knot — build-time image and video discovery.
  *
  * Scans the approved folders inside `public/media/`, reads every supported
- * image's real dimensions, validates story metadata, selects the homepage
- * film from `home/video/` (see selectHomeVideo), and writes:
+ * image's real dimensions, validates story metadata, collects the homepage
+ * films from `home/video/` and `home/films/` (see selectHomeFilms), and writes:
  *
  *   1. src/content/generated/media-manifest.json — typed data bundled into the
  *      site at build time (the Cloudflare Worker never touches the filesystem).
@@ -39,8 +39,10 @@ export const LARGE_FILE_BYTES = 8 * 1024 * 1024;
 /** Single-collection folders, mapped to the page sections that use them. */
 export const SITE_COLLECTIONS = ["home/hero", "home/featured", "about", "experience", "contact"];
 
-/** Homepage film folder: one MP4 (H.264) plus an optional poster image. */
+/** Legacy homepage film folder: one MP4 (H.264) plus an optional poster image. */
 export const VIDEO_DIR = "home/video";
+/** Homepage film collection: any number of MP4s (H.264), each with an optional poster. */
+export const FILMS_DIR = "home/films";
 export const VIDEO_EXTENSIONS = new Set([".mp4"]);
 /** Above this a video still publishes, with a warning to compress it. */
 export const LARGE_VIDEO_BYTES = 15 * 1024 * 1024;
@@ -405,22 +407,75 @@ async function readStory(root, slug, absDir, publicDir, report, seen) {
 }
 
 /* ------------------------------------------------------------------------ */
-/* Homepage film                                                             */
+/* Homepage films                                                            */
 /* ------------------------------------------------------------------------ */
 
 /**
- * Picks the homepage film from public/media/home/video/.
+ * Validates one uploaded MP4 and returns its manifest entry, or null (with a
+ * warning) when it cannot be published.
+ */
+async function inspectVideo(abs, rel, publicDir, report) {
+  const { size } = await stat(abs);
+  if (size === 0) {
+    report.warn(`${rel}: empty file — skipped`);
+    return null;
+  }
+  if (size > MAX_FILE_BYTES) {
+    report.warn(`${rel}: ${(size / 1048576).toFixed(1)} MB exceeds Cloudflare's 25 MB asset limit — skipped (please compress; see docs/IMAGE-UPLOADS.md)`);
+    return null;
+  }
+  const bytes = await readFile(abs);
+  const info = readMp4(bytes);
+  if (!info) {
+    report.warn(`${rel}: not a readable MP4 video — skipped`);
+    return null;
+  }
+  if (!PLAYABLE_CODECS.has(info.codec)) {
+    report.warn(`${rel}: video codec "${info.codec}" does not play in every browser — skipped (export as H.264 MP4)`);
+    return null;
+  }
+  if (!info.fastStart) report.warn(`${rel}: not optimised for streaming — playback starts only after a large part downloads (export with "fast start" / "web optimised")`);
+  if (size > LARGE_VIDEO_BYTES) report.warn(`${rel}: ${(size / 1048576).toFixed(1)} MB — consider compressing to under 15 MB for faster loading`);
+  return { src: publicUrl(path.relative(publicDir, abs)), type: "video/mp4", width: info.width, height: info.height, duration: info.duration, hasAudio: info.hasAudio, bytes: size, hash: contentHash(bytes) };
+}
+
+/** Reads a poster image's real dimensions; undefined (with a warning) when unusable. */
+async function readPoster(absDir, name, where, publicDir, report) {
+  const abs = path.join(absDir, name);
+  let dims = null;
+  let bytes;
+  try {
+    if ((await stat(abs)).size <= MAX_FILE_BYTES) {
+      bytes = await readFile(abs);
+      dims = imageSize(bytes);
+    }
+  } catch {
+    dims = null;
+  }
+  if (!dims?.width || !dims?.height) {
+    report.warn(`${where}/${name}: unreadable or oversized poster image — the video is shown without it`);
+    return undefined;
+  }
+  const rotated = dims.orientation && dims.orientation >= 5;
+  return { src: publicUrl(path.relative(publicDir, abs)), width: rotated ? dims.height : dims.width, height: rotated ? dims.width : dims.height, alt: "", hash: contentHash(bytes) };
+}
+
+async function listFiles(absDir) {
+  return (await listDir(absDir)).filter((e) => e.isFile() && !isHidden(e.name)).map((e) => e.name).sort(byName);
+}
+
+/**
+ * Picks the legacy homepage film from public/media/home/video/.
  *
  * Deterministic: the first valid .mp4 in natural filename order is used
  * (`01-…` before `02-…`); any others are withheld. A poster is optional — an
  * image with the same name as the video (`film.mp4` + `film.jpg`), otherwise
- * one named `poster.*`. With no valid video the result is null and the
- * homepage film section is not rendered at all.
+ * one named `poster.*`. With no valid video the result is null.
  */
 export async function selectHomeVideo(publicDir, report) {
   const absDir = path.join(publicDir, "media", ...VIDEO_DIR.split("/"));
   const where = `media/${VIDEO_DIR}`;
-  const files = (await listDir(absDir)).filter((e) => e.isFile() && !isHidden(e.name)).map((e) => e.name).sort(byName);
+  const files = await listFiles(absDir);
   const videos = files.filter((name) => VIDEO_EXTENSIONS.has(path.extname(name).toLowerCase()));
   for (const name of files) {
     const ext = path.extname(name).toLowerCase();
@@ -431,34 +486,13 @@ export async function selectHomeVideo(publicDir, report) {
 
   let chosen = null;
   for (const name of videos) {
-    const abs = path.join(absDir, name);
     const rel = `${where}/${name}`;
     if (chosen) {
-      report.warn(`${rel}: only one homepage video is shown — "${chosen.file}" is used (first by name); this file is not published`);
+      report.warn(`${rel}: only one homepage video is shown from home/video — "${chosen.file}" is used (first by name); this file is not published (put more films in home/films/)`);
       continue;
     }
-    const { size } = await stat(abs);
-    if (size === 0) {
-      report.warn(`${rel}: empty file — skipped`);
-      continue;
-    }
-    if (size > MAX_FILE_BYTES) {
-      report.warn(`${rel}: ${(size / 1048576).toFixed(1)} MB exceeds Cloudflare's 25 MB asset limit — skipped (please compress; see docs/IMAGE-UPLOADS.md)`);
-      continue;
-    }
-    const bytes = await readFile(abs);
-    const info = readMp4(bytes);
-    if (!info) {
-      report.warn(`${rel}: not a readable MP4 video — skipped`);
-      continue;
-    }
-    if (!PLAYABLE_CODECS.has(info.codec)) {
-      report.warn(`${rel}: video codec "${info.codec}" does not play in every browser — skipped (export as H.264 MP4)`);
-      continue;
-    }
-    if (!info.fastStart) report.warn(`${rel}: not optimised for streaming — playback starts only after a large part downloads (export with "fast start" / "web optimised")`);
-    if (size > LARGE_VIDEO_BYTES) report.warn(`${rel}: ${(size / 1048576).toFixed(1)} MB — consider compressing to under 15 MB for faster loading`);
-    chosen = { file: name, src: publicUrl(path.relative(publicDir, abs)), type: "video/mp4", width: info.width, height: info.height, duration: info.duration, hasAudio: info.hasAudio, bytes: size, hash: contentHash(bytes) };
+    const entry = await inspectVideo(path.join(absDir, name), rel, publicDir, report);
+    if (entry) chosen = { file: name, ...entry };
   }
   if (!chosen) return null;
 
@@ -466,26 +500,7 @@ export async function selectHomeVideo(publicDir, report) {
   const base = path.parse(chosen.file).name.toLowerCase();
   const images = files.filter((name) => SUPPORTED_EXTENSIONS.has(path.extname(name).toLowerCase()));
   const posterName = images.find((n) => path.parse(n).name.toLowerCase() === base) ?? images.find((n) => path.parse(n).name.toLowerCase() === "poster");
-  let poster;
-  if (posterName) {
-    const abs = path.join(absDir, posterName);
-    let dims = null;
-    let bytes;
-    try {
-      if ((await stat(abs)).size <= MAX_FILE_BYTES) {
-        bytes = await readFile(abs);
-        dims = imageSize(bytes);
-      }
-    } catch {
-      dims = null;
-    }
-    if (dims?.width && dims?.height) {
-      const rotated = dims.orientation && dims.orientation >= 5;
-      poster = { src: publicUrl(path.relative(publicDir, abs)), width: rotated ? dims.height : dims.width, height: rotated ? dims.width : dims.height, alt: "", hash: contentHash(bytes) };
-    } else {
-      report.warn(`${where}/${posterName}: unreadable or oversized poster image — the video is shown without it`);
-    }
-  }
+  const poster = posterName ? await readPoster(absDir, posterName, where, publicDir, report) : undefined;
   for (const name of images) {
     if (name !== posterName) report.warn(`${where}/${name}: not used — a poster must share the video's name ("${base}.jpg") or be named poster.jpg`);
   }
@@ -495,11 +510,110 @@ export async function selectHomeVideo(publicDir, report) {
   return { ...video, ...(poster ? { poster } : {}) };
 }
 
+/**
+ * Readable fallback title from a filename: separators become spaces and an
+ * all-lower-case name is capitalised ("wedding-film_02.mp4" → "Wedding Film 02").
+ * Nothing is invented — it is the filename, tidied.
+ */
+export function titleFromFilename(file) {
+  const words = path.parse(file).name.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+  if (!words) return "Film";
+  return words === words.toLowerCase() ? words.replace(/(^|\s)(\p{L})/gu, (m, sp, ch) => sp + ch.toUpperCase()) : words;
+}
+
+/**
+ * Every homepage film, in display order (the first is the featured film).
+ *
+ * Sources: the legacy single film from home/video/ (selectHomeVideo, kept so
+ * the existing film keeps working unchanged) plus every valid MP4 in
+ * home/films/. Each film may have a poster image with the same base name
+ * (`ceremony.mp4` + `ceremony.jpg`).
+ *
+ * Order: by default the legacy film comes first (it is the current featured
+ * film), then home/films/ in natural filename order. An optional
+ * home/films/films.json reorders and titles them, by filename:
+ *
+ *   { "order": ["ceremony.mp4", "V 01.mp4"], "ceremony.mp4": "Wedding Film 01" }
+ *
+ * Films listed in "order" come first, in that order; the rest follow in the
+ * default order. A film without a title uses its tidied filename.
+ *
+ * Duplicates are shown once: a film in home/films/ with the same content as
+ * the legacy film replaces it (taking its place in home/films/ order), and a
+ * repeated file inside home/films/ is withheld. Film URLs are keyed by
+ * filename, so a different film sharing the legacy film's filename is withheld
+ * with a request to rename it.
+ */
+export async function selectHomeFilms(publicDir, legacy, report) {
+  const absDir = path.join(publicDir, "media", ...FILMS_DIR.split("/"));
+  const where = `media/${FILMS_DIR}`;
+  const files = await listFiles(absDir);
+  const { value: config } = await readJson(path.join(absDir, "films.json"), report);
+  const settings = config && typeof config === "object" && !Array.isArray(config) ? config : {};
+  if (config !== null && settings !== config) report.warn(`${where}/films.json: must be an object — ignored`);
+
+  const images = files.filter((name) => SUPPORTED_EXTENSIONS.has(path.extname(name).toLowerCase()));
+  const usedPosters = new Set();
+  const legacyFile = legacy ? decodeURIComponent(legacy.src.split("/").pop()) : null;
+  const pool = [];
+  let legacyReplaced = false;
+
+  for (const name of files) {
+    const ext = path.extname(name).toLowerCase();
+    if (name === "films.json" || SUPPORTED_EXTENSIONS.has(ext)) continue;
+    const rel = `${where}/${name}`;
+    if (!VIDEO_EXTENSIONS.has(ext)) {
+      report.warn(`${rel}: unsupported file type "${ext || "none"}" — not published (films must be .mp4, H.264)`);
+      continue;
+    }
+    const entry = await inspectVideo(path.join(absDir, name), rel, publicDir, report);
+    if (!entry) continue;
+    const twin = pool.find((f) => f.hash === entry.hash);
+    if (twin) {
+      report.warn(`${rel}: the same film as "${twin.file}" — shown once; this copy is not published`);
+      continue;
+    }
+    if (legacy && entry.hash === legacy.hash) legacyReplaced = true;
+    else if (name === legacyFile) {
+      report.warn(`${rel}: shares its filename with the film in home/video/ — rename it so each film has its own address; not published`);
+      continue;
+    }
+    const base = path.parse(name).name.toLowerCase();
+    const posterName = images.find((n) => path.parse(n).name.toLowerCase() === base);
+    let poster;
+    if (posterName) {
+      usedPosters.add(posterName);
+      poster = await readPoster(absDir, posterName, where, publicDir, report);
+    }
+    pool.push({ file: name, ...entry, ...(poster ? { poster } : {}) });
+  }
+  for (const name of images) {
+    if (!usedPosters.has(name)) report.warn(`${where}/${name}: not used — a poster must share its film's name ("ceremony.mp4" + "ceremony.jpg")`);
+  }
+  if (legacy && !legacyReplaced) pool.unshift({ file: legacyFile, ...legacy });
+
+  // Optional explicit order, then the default order for everything else.
+  const order = Array.isArray(settings.order) ? settings.order.filter((n) => typeof n === "string") : [];
+  if (settings.order !== undefined && !Array.isArray(settings.order)) report.warn(`${where}/films.json: "order" must be a list of filenames — ignored`);
+  for (const name of order) if (!pool.some((f) => f.file === name)) report.warn(`${where}/films.json: "${name}" in "order" is not a published film — ignored`);
+  const rank = (f) => (order.includes(f.file) ? order.indexOf(f.file) : order.length + pool.indexOf(f));
+  const sorted = [...pool].sort((a, b) => rank(a) - rank(b));
+
+  return sorted.map(({ file, ...film }) => {
+    const configured = settings[file];
+    const title = typeof configured === "string" && configured.trim() ? configured.trim() : titleFromFilename(file);
+    if (configured !== undefined && !(typeof configured === "string" && configured.trim())) {
+      report.warn(`${where}/films.json: the title for "${file}" must be a non-empty string — the filename is used`);
+    }
+    return { id: film.hash, title, ...film };
+  });
+}
+
 /** True when a file sits directly in a site collection or a story folder. */
 function isRecognisedLocation(relFromPublic) {
   const parts = relFromPublic.split("/").slice(1, -1); // drop "media" and the filename
   const dir = parts.join("/");
-  if (SITE_COLLECTIONS.includes(dir) || dir === VIDEO_DIR) return true;
+  if (SITE_COLLECTIONS.includes(dir) || dir === VIDEO_DIR || dir === FILMS_DIR) return true;
   // weddings/<photo> is a category gallery; weddings/<story>/<photo> is a story.
   if (parts.length === 1 && Object.hasOwn(GALLERY_LABELS, parts[0])) return true;
   return parts.length === 2 && Object.hasOwn(STORY_ROOTS, parts[0]);
@@ -608,14 +722,15 @@ export async function generateManifest({ publicDir, outFile, ignoreFile, cacheDi
       byName(a.slug, b.slug),
   );
 
-  // Homepage film
+  // Homepage films: the legacy home/video/ film plus home/films/
   const video = await selectHomeVideo(publicDir, report);
-  if (video) {
-    published.add(video.src);
-    if (video.poster) published.add(video.poster.src);
+  const films = await selectHomeFilms(publicDir, video, report);
+  for (const film of films) {
+    published.add(film.src);
+    if (film.poster) published.add(film.poster.src);
   }
 
-  const manifest = { version: 1, collections, galleries, stories, video };
+  const manifest = { version: 1, collections, galleries, stories, video, films };
   await mkdir(path.dirname(outFile), { recursive: true });
   await writeFile(outFile, JSON.stringify(manifest, null, 2) + "\n");
   const fingerprinted = cacheDir ? await writeFingerprintedCopies(publicDir, cacheDir, manifest) : 0;
@@ -671,9 +786,9 @@ if (isCli) {
   const counts = [...Object.entries(manifest.collections), ...Object.entries(manifest.galleries).map(([k, v]) => [`gallery/${k}`, v])]
     .map(([k, v]) => `${k}: ${v.length}`)
     .join(", ");
-  const film = manifest.video
-    ? `home video: ${decodeURIComponent(manifest.video.src.split("/").pop())} (${manifest.video.width}×${manifest.video.height}, ${(manifest.video.bytes / 1048576).toFixed(1)} MB${manifest.video.poster ? ", poster" : ""})`
-    : "home video: none";
+  const film = manifest.films.length
+    ? `home films: ${manifest.films.map((f) => `${decodeURIComponent(f.src.split("/").pop())} (${f.width}×${f.height}, ${(f.bytes / 1048576).toFixed(1)} MB${f.poster ? ", poster" : ""})`).join(", ")}`
+    : "home films: none";
   console.log(`[media] ${manifest.stories.length} published stor${manifest.stories.length === 1 ? "y" : "ies"}; ${counts}; ${film}; ${fingerprinted} fingerprinted photo URL(s); ${unpublished.length} file(s) withheld from upload`);
   if (!quiet) notes.forEach((m) => console.log(`[media] note: ${m}`));
   warnings.forEach((m) => console.warn(`[media] warning: ${m}`));

@@ -37,7 +37,7 @@ export type ManifestStory = {
 
 export type GalleryCategory = "weddings" | "pre-wedding" | "couples" | "beyond-the-frame";
 
-/** The homepage film uploaded to public/media/home/video/ (H.264 MP4). */
+/** A homepage film: an H.264 MP4 from public/media/home/video/ or public/media/home/films/. */
 export type HomeVideo = {
   src: string;
   type: "video/mp4";
@@ -53,21 +53,32 @@ export type HomeVideo = {
   poster?: ManifestImage;
 };
 
+/** A film in the homepage collection, in display order (see selectHomeFilms in the generator). */
+export type HomeFilm = HomeVideo & {
+  /** Stable key: the film's content hash. */
+  id: string;
+  /** From home/films/films.json, else the tidied filename — never invented. */
+  title: string;
+  hash: string;
+};
+
 export type MediaManifest = {
   version: 1;
   collections: Record<SiteCollection, ManifestImage[]>;
   /** Category galleries: photographs placed directly in weddings/, pre-wedding/, couples/, beyond-the-frame/. */
   galleries: Record<GalleryCategory, ManifestImage[]>;
   stories: ManifestStory[];
-  /** Null while no valid video is uploaded — the homepage film section is then not rendered. */
+  /** The legacy single film from home/video/ (null when none); also included in `films`. */
   video: HomeVideo | null;
+  /** Every homepage film, featured first. Empty — the film section is then not rendered. */
+  films: HomeFilm[];
 };
 
 export const manifest = manifestJson as MediaManifest;
 
-/** The uploaded homepage film, or undefined when none is published. */
-export function getHomeVideo(): HomeVideo | undefined {
-  return manifest.video ?? undefined;
+/** Every published homepage film, featured first (empty when none). */
+export function getHomeFilms(): HomeFilm[] {
+  return manifest.films ?? [];
 }
 
 /**

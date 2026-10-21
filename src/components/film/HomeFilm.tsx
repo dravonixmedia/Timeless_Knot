@@ -6,7 +6,17 @@ import { homeVideoStreamUrl } from "@/lib/home-video";
 import { Picture } from "@/components/media/Picture";
 import { toMedia } from "@/lib/compose-gallery";
 
-type Props = { video: HomeVideo; title?: string };
+type Props = {
+  video: HomeVideo;
+  title?: string;
+  /** Start playing as soon as it mounts: the visitor chose this film (film collection). */
+  autoStart?: boolean;
+  /** Initial sound state — lets the collection keep a visitor's choice across films. Default muted. */
+  initialMuted?: boolean;
+  onMutedChange?: (muted: boolean) => void;
+};
+
+type FullscreenVideo = HTMLVideoElement & { webkitEnterFullscreen?: () => void };
 
 const REDUCE = "(prefers-reduced-motion: reduce)";
 /** How long the frame must stay well out of view before its source is released. */
@@ -37,16 +47,23 @@ const canAutoplay = () =>
  *   autoplay is refused — or the visitor prefers reduced motion or has Data
  *   Saver on — it waits on its poster / first frame for a press of Play.
  * - Sound only ever starts from the visitor's own click on Unmute.
+ * - Full screen uses the frame (custom controls stay available), or the native
+ *   video player where only that is allowed (iPhone Safari).
+ * - In the film collection a film the visitor picks starts at once
+ *   (`autoStart`), keeping their sound choice; it never starts with sound by itself.
  * - The frame takes the video's own aspect ratio, so the footage is never
  *   stretched or cropped and the layout never shifts as it loads.
  */
-export function HomeFilm({ video, title = "Timeless Knot wedding film" }: Props) {
+export function HomeFilm({ video, title = "Timeless Knot wedding film", autoStart = false, initialMuted = true, onMutedChange }: Props) {
   const frame = useRef<HTMLDivElement>(null);
   const ref = useRef<HTMLVideoElement>(null);
   /** The source is attached: the frame is near the viewport, or left it only moments ago. */
-  const [near, setNear] = useState(false);
+  const [near, setNear] = useState(autoStart);
   const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(initialMuted);
+  const [fullscreen, setFullscreen] = useState(false);
+  /** Played once on mount when the visitor picked this film. */
+  const startNow = useRef(autoStart);
   const [shown, setShown] = useState(false);
   /** A meaningful part of the frame is on screen. */
   const [onScreen, setOnScreen] = useState(false);
@@ -133,10 +150,22 @@ export function HomeFilm({ video, title = "Timeless Knot wedding film" }: Props)
       if (v.networkState !== v.NETWORK_EMPTY) v.load();
       return;
     }
-    // Once the source is attached, start straight away if the frame is already in view.
-    v.muted = true;
-    if (autoplay && inView.current && !userPaused.current) tryPlay();
+    // Once the source is attached, start straight away if the frame is already in
+    // view — or at once if the visitor just chose this film.
+    v.muted = startNow.current ? initialMuted : true;
+    if (startNow.current) {
+      startNow.current = false;
+      tryPlay();
+    } else if (autoplay && inView.current && !userPaused.current) tryPlay();
+    // initialMuted only applies to the first start; later changes come from the controls.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [near, autoplay, tryPlay]);
+
+  useEffect(() => {
+    const sync = () => setFullscreen(document.fullscreenElement === frame.current);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
 
   const togglePlay = useCallback(() => {
     const v = ref.current;
@@ -150,6 +179,19 @@ export function HomeFilm({ video, title = "Timeless Knot wedding film" }: Props)
       v.pause();
     }
   }, [near, tryPlay]);
+
+  const toggleFullscreen = useCallback(() => {
+    const el = frame.current;
+    const v = ref.current as FullscreenVideo | null;
+    if (!el || !v) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+      return;
+    }
+    if (!near) setNear(true);
+    if (el.requestFullscreen) el.requestFullscreen().catch(() => v.webkitEnterFullscreen?.());
+    else v.webkitEnterFullscreen?.();
+  }, [near]);
 
   const toggleMute = useCallback(() => {
     const v = ref.current;
@@ -178,7 +220,7 @@ export function HomeFilm({ video, title = "Timeless Knot wedding film" }: Props)
     <figure className="relative">
       <div
         ref={frame}
-        className="group relative mx-auto w-full overflow-hidden bg-charcoal"
+        className="group relative mx-auto w-full overflow-hidden bg-charcoal [&:fullscreen_video]:object-contain"
         style={{ aspectRatio: `${video.width} / ${video.height}`, maxWidth: `calc(82svh * ${ratio.toFixed(4)})` }}
       >
         {video.poster && (
@@ -207,7 +249,10 @@ export function HomeFilm({ video, title = "Timeless Knot wedding film" }: Props)
             setShown(true);
           }}
           onPause={() => setPlaying(false)}
-          onVolumeChange={(e) => setMuted(e.currentTarget.muted)}
+          onVolumeChange={(e) => {
+            setMuted(e.currentTarget.muted);
+            onMutedChange?.(e.currentTarget.muted);
+          }}
         />
 
         {/* Large play affordance only while the film is waiting for the visitor. */}
@@ -234,18 +279,28 @@ export function HomeFilm({ video, title = "Timeless Knot wedding film" }: Props)
             {playing ? <PauseIcon className="h-3.5 w-3.5" /> : <PlayIcon className="h-3.5 w-3.5" />}
             <span aria-hidden="true">{playing ? "Pause" : "Play"}</span>
           </button>
-          {video.hasAudio && (
+          <div className="flex items-center gap-2 sm:gap-4">
+            {video.hasAudio && (
+              <button
+                type="button"
+                onClick={toggleMute}
+                aria-pressed={!muted}
+                className="meta flex min-h-11 items-center gap-3 text-[0.6rem] tracking-[0.2em]"
+                aria-label={muted ? "Turn sound on" : "Turn sound off"}
+              >
+                {muted ? <MutedIcon className="h-4 w-4" /> : <SoundIcon className="h-4 w-4" />}
+                <span aria-hidden="true">{muted ? "Sound off" : "Sound on"}</span>
+              </button>
+            )}
             <button
               type="button"
-              onClick={toggleMute}
-              aria-pressed={!muted}
-              className="meta flex min-h-11 items-center gap-3 text-[0.6rem] tracking-[0.2em]"
-              aria-label={muted ? "Turn sound on" : "Turn sound off"}
+              onClick={toggleFullscreen}
+              className="flex min-h-11 min-w-11 items-center justify-center"
+              aria-label={fullscreen ? "Exit full screen" : `Watch ${title} in full screen`}
             >
-              {muted ? <MutedIcon className="h-4 w-4" /> : <SoundIcon className="h-4 w-4" />}
-              <span aria-hidden="true">{muted ? "Sound off" : "Sound on"}</span>
+              {fullscreen ? <ShrinkIcon className="h-4 w-4" /> : <ExpandIcon className="h-4 w-4" />}
             </button>
-          )}
+          </div>
         </div>
       </div>
     </figure>
@@ -282,6 +337,22 @@ function SoundIcon({ className }: { className: string }) {
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
       <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" stroke="none" />
       <path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ExpandIcon({ className }: { className: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ShrinkIcon({ className }: { className: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" strokeLinecap="round" />
     </svg>
   );
 }
